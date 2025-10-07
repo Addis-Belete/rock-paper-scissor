@@ -1,4 +1,5 @@
 export interface IRPG {
+_id: string
   player1Address: string;
   player2Address: string;
   stakedETH: string;
