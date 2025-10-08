@@ -1,8 +1,16 @@
-import { Badge } from "@/components/ui/badge";
+"use client";
+
 import { Button } from "@/components/ui/button";
 import { Plus } from "lucide-react";
+import { walletService } from "@/lib/services/walletService";
+import { RPGService } from "@/lib/services/rpgService";
+import { useState } from "react";
+import { Modal } from "@/components/ui/modal";
+import { PlayNewGame } from "@/components/newGameForm";
 
 export default function Home() {
+  const [showModal, setShowModal] = useState(false);
+
   return (
     <div className="font-sans grid grid-rows-[20px_1fr_20px] items-center w-full justify-items-center min-h-screen pb-20 gap-16 sm:p-20">
       <main className="w-full flex flex-col gap-4">
@@ -26,10 +34,15 @@ export default function Home() {
           </ul>
 
           <div className="">
-            <Button className="flex gap-2 items-center">
+            <Button
+              className="flex gap-2 items-center"
+              onClick={() => setShowModal(true)}
+            >
               <Plus />
               <span>Create New Game</span>
             </Button>
+
+            {showModal && <PlayNewGame show={showModal} onClose={() => setShowModal(false)}/>}
           </div>
         </div>
         <div className="flex gap-4 flex-col">
@@ -59,7 +72,6 @@ export default function Home() {
                   <th className="px-4 py-3 text-left font-semibold text-gray-300">
                     Action
                   </th>
-                
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-800">
@@ -67,12 +79,18 @@ export default function Home() {
                   <td className="px-6 py-4 text-sm text-blue-400 max-w-[150px]">
                     1.
                   </td>
-                  <td className="px-6 py-4 text-sm text-gray-100">22-02-2025</td>
+                  <td className="px-6 py-4 text-sm text-gray-100">
+                    22-02-2025
+                  </td>
                   <td className="px-6 py-4 text-sm text-gray-100">Player 1</td>
-                  <td className="px-6 py-4 text-sm text-gray-100">0x02323...3453</td>
+                  <td className="px-6 py-4 text-sm text-gray-100">
+                    0x02323...3453
+                  </td>
                   <td className="px-6 py-4 text-sm text-gray-100">2 ETH</td>
                   <td className="px-6 py-4 text-sm text-gray-100">Win</td>
-                  <td className="px-6 py-4 text-sm text-gray-100"><Button variant="outline">Reveal</Button></td>
+                  <td className="px-6 py-4 text-sm text-gray-100">
+                    <Button variant="outline">Reveal</Button>
+                  </td>
                 </tr>
               </tbody>
             </table>

@@ -35,7 +35,7 @@ export class RPGRepository {
    */
   static async updateRPGGame(data: IRPG) {
     const _data = await RPG.findByIdAndUpdate(
-      data._id.toLowerCase(), // normalize id
+      data._id?.toLowerCase(), // normalize id
       { $set: data }, // update data
       { upsert: true, new: true, lean: true } // return plain object
     );

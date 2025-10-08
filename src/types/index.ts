@@ -1,14 +1,11 @@
 export interface IRPG {
-_id: string
+  _id?: string;
+  rpgAddress: string;
   player1Address: string;
   player2Address: string;
   stakedETH: string;
-  timestamp: string;
-  timeout: string;
-  lastActionTimestamp: string;
-  player1Move: string;
-  player2Move: string | null;
-  salt: number;
+  createdAt: string;
+  lastAction: string;
   status: "win" | "loss" | "cancelled" | "draw" | null;
-  progress: "created" | "moved" | "solved" | null;
+  progress: "created" | "moved" | "solved"
 }

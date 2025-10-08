@@ -6,6 +6,7 @@ type Config = {
   mongoDBUri: string;
   etherscanBaseUrl: string;
   offset: string;
+  hasherAddress: string;
 };
 
 export const config: Config = {
@@ -15,7 +16,8 @@ export const config: Config = {
   multicallAddress: "0xcA11bde05977b3631167028862bE2a173976CA11", // Mainnet & most EVM chains
   mongoDBUri:
     process.env.MONGO_DB_URI ||
-    "mongodb://localhost:27018/?directConnection=true",
+    "mongodb://localhost:27017/?directConnection=true",
   etherscanBaseUrl: "https://api.etherscan.io/api",
   offset: process.env.OFFSET || "10000",
+  hasherAddress: "0x8053bB097424eDF8F151516c3114E6d3e054CC62" // deployed on sepolia
 };

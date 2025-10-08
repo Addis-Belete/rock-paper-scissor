@@ -1,32 +1,62 @@
+"use client";
 import { Wallet, Gamepad2 } from "lucide-react";
 import { Badge } from "./ui/badge";
+import { walletService } from "@/lib/services/walletService";
+import { useState } from "react";
+import { Button } from "./ui/button";
+import { shortenAddress } from "@/lib/utils/helpers";
 
-export function Header({children}: {children: React.ReactNode}) {
+export function Header({ children }: { children: React.ReactNode }) {
+  const [account, setAccount] = useState<string | null>(null);
+  const [balance, setBalance] = useState<string | null> (null)
+
+
+  const connectWallet = async () => {
+    try {
+     const address = await walletService.connect();
+     console.log(address, 'connected wallet')
+     setAccount(address)
+    } catch (error) {}
+  };
+
+  const disconnect = async () => {
+     walletService.disconnect()
+     setAccount(null)
+     setBalance(null)
+  }
   return (
     <div className="min-h-screen bg-background">
-    <header className="border-b border-border bg-card/50 backdrop-blur-sm mb-8">
-      <div className="container mx-auto px-4 py-4">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary">
-              <Gamepad2 className="h-5 w-5 text-primary-foreground" />
+      <header className="border-b border-border bg-card/50 backdrop-blur-sm mb-8">
+        <div className="container mx-auto px-4 py-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary">
+                <Gamepad2 className="h-5 w-5 text-primary-foreground" />
+              </div>
+              <div>
+                <h1 className="text-xl font-semibold text-foreground text-red">
+                  RPS Game
+                </h1>
+                <p className="text-sm text-muted-foreground">
+                  Rock Paper Scissors Game
+                </p>
+              </div>
             </div>
-            <div>
-              <h1 className="text-xl font-semibold text-foreground text-red">
-                RPS Game
-              </h1>
-              <p className="text-sm text-muted-foreground">
-                Rock Paper Scissors Game
-              </p>
+            <div className="flex gap-2 items-center">
+              {account && (
+                 <Badge>{shortenAddress(account)}</Badge>
+              )}
+            <Button
+              className="bg-primary/10 text-primary border-primary/20"
+              onClick={account ? disconnect : connectWallet}
+            >
+              {account ? "Disconnect" : "Connect"}
+            </Button>
             </div>
           </div>
-          <Badge className="bg-primary/10 text-primary border-primary/20">
-            Connect Wallet
-          </Badge>
         </div>
-      </div>
-    </header>
-    {children}
+      </header>
+      {children}
     </div>
   );
 }
