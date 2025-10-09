@@ -13,11 +13,14 @@ import {
   shortenAddress,
 } from "@/lib/utils/helpers";
 import { formatEther } from "ethers";
+import { getGameStatus } from "@/lib/utils/helpers";
+import { Play } from "@/components/play";
 
 export default function Home() {
   const [showModal, setShowModal] = useState(false);
   const [games, setGames] = useState<IRPG[]>([]);
   const [now, setNow] = useState(Date.now());
+  const [showPlayModal, setShowPlayModal] = useState(false);
 
   let { account, balance } = useContext(WalletContext);
 
@@ -64,43 +67,6 @@ export default function Home() {
     return Math.max(0, Math.floor((endTime * 1000 - now) / 1000));
   };
 
-  const getGameStatus = (
-    account: string,
-    timeRemaining: string | number,
-    progress: string,
-    player1: string,
-    status: string
-  ) => {
-    const role =
-      account.toLowerCase() === player1 ? "player_one" : "player_two";
-
-    if (status !== "active") return "--";
-
-    const time = Number(timeRemaining);
-
-    if (isNaN(time)) return "--";
-
-    if (
-      Number(timeRemaining) > 0 &&
-      progress === "created" &&
-      role === "player_two"
-    )
-      return "move";
-    if (
-      Number(timeRemaining) === 0 &&
-      progress === "created" &&
-      role === "player_one"
-    )
-      return "Refund";
-    if (
-      Number(timeRemaining) === 0 &&
-      progress === "moved" &&
-      role === "player_one"
-    )
-      return "solve";
-    return "--";
-  };
-
   return (
     <div className="font-sans grid grid-rows-[20px_1fr_20px] w-full justify-items-center min-h-screen pb-20 gap-16 sm:p-20">
       <main className="w-full flex flex-col gap-4">
@@ -125,6 +91,7 @@ export default function Home() {
 
           <div className="">
             <Button
+              disabled={account === null}
               className="flex gap-2 items-center"
               onClick={() => setShowModal(true)}
             >
@@ -179,10 +146,8 @@ export default function Home() {
                     const remaining = getRemaining(
                       Number(game.lastAction) + 5 * 60
                     );
-                    const isDisabled = remaining > 0;
-
                     return (
-                      <tr className="hover:bg-gray-800/60 transition">
+                      <tr className="hover:bg-gray-800/60 transition" key={index}>
                         <td className="px-6 py-4 text-sm text-blue-400 max-w-[150px]">
                           {index + 1}
                         </td>
@@ -210,7 +175,10 @@ export default function Home() {
                         </td>
                         <td className="px-6 py-4 text-sm text-gray-100">
                           {
-                            <Button variant="outline">
+                            <Button
+                              variant="outline"
+                              onClick={() => setShowPlayModal(true)}
+                            >
                               {getGameStatus(
                                 account,
                                 remaining,
@@ -221,6 +189,14 @@ export default function Home() {
                             </Button>
                           }
                         </td>
+                        {showPlayModal && (
+                          <Play
+                            balance={balance || '0'}
+                            rpgData={game}
+                            show={showPlayModal}
+                            onClose={() => setShowPlayModal(false)}
+                          />
+                        )}
                       </tr>
                     );
                   })

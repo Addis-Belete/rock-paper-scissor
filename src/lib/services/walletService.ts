@@ -42,10 +42,11 @@ class WalletService {
   }
 
   // Get balance
-  async getBalance(address: string): Promise<string> {
+  async getBalance(address: string | undefined): Promise<string> {
     if (!this.provider) throw new Error("Provider not initialized.");
+    if(!address) return '0'
     const balance = await this.provider.getBalance(address);
-    return ethers.formatEther(balance);
+    return balance.toString();
   }
 
   // Sepolia is supported

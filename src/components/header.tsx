@@ -1,5 +1,5 @@
 "use client";
-import { Wallet, Gamepad2 } from "lucide-react";
+import { Gamepad2 } from "lucide-react";
 import { Badge } from "./ui/badge";
 import { walletService } from "@/lib/services/walletService";
 import { useState } from "react";
@@ -14,7 +14,9 @@ export function Header({ children }: { children: React.ReactNode }) {
   const connectWallet = async () => {
     try {
       await walletService.connect();
+      const balance = await walletService.getBalance(walletService.account);
       setAccount(walletService.account || null);
+      setBalance(balance);
     } catch (error) {
       console.error(error);
       throw new Error("falied to connect wallet");

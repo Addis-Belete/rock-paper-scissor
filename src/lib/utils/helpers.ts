@@ -23,3 +23,39 @@ export function formatRemainingTime(seconds: number): string {
   if (mins > 0) return `${pad(mins)}:${pad(secs)}`;
   return `${secs}s`;
 }
+
+export const getGameStatus = (
+  account: string,
+  timeRemaining: string | number,
+  progress: string,
+  player1: string,
+  status: string
+) => {
+  const role = account.toLowerCase() === player1 ? "player_one" : "player_two";
+
+  if (status !== "active") return "--";
+
+  const time = Number(timeRemaining);
+
+  if (isNaN(time)) return "--";
+
+  if (
+    Number(timeRemaining) >= 0 &&
+    progress === "created" &&
+    role === "player_two"
+  )
+    return "move";
+  if (
+    Number(timeRemaining) === 0 &&
+    progress === "created" &&
+    role === "player_one"
+  )
+    return "Refund";
+  if (
+    Number(timeRemaining) === 0 &&
+    progress === "moved" &&
+    role === "player_one"
+  )
+    return "solve";
+  return "--";
+};

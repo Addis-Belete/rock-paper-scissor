@@ -39,10 +39,10 @@ export class RPGService {
     return lastAction;
   }
 
-  static async move(address: string, move: string, signer: Signer) {
+  static async move(address: string, move: string, signer: Signer | undefined, amount: string) {
+    if (!signer) throw new Error("Wallet not connected");
     const contract = new Contract(address, rpgAbi, signer);
-
-    //return await contract.connect(signer).move();
+    return await contract.play(move, {value: amount});
   }
 
   static async getHash(
