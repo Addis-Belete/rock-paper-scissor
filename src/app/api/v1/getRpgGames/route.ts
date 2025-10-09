@@ -17,7 +17,7 @@ export async function GET(req: Request) {
       );
     }
 
-    const data = await RPGRepository.getRPGGames(address)
+    const data = await RPGRepository.getRPGGames(address.toLowerCase())
     console.log('data')
     return NextResponse.json({
       message: "fetched games successfully",

@@ -8,7 +8,7 @@ const RPGSchema = new Schema({
   stakedETH: { type: Number, required: true },
   createdAt: { type: String, required: true },
   lastAction: { type: String, required: true },
-  status: { enum: ["win", "loss", "cancelled", "draw"], type: String },
+  status: { enum: ["active", "win", "loss", "cancelled", "draw"], type: String },
   progress: {
     enum: ["created", "moved", "solved"],
     type: String,

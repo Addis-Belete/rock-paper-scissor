@@ -15,16 +15,16 @@ export class RPGRepository {
    * @notice get all games by address and status
    */
 
-  static async getRPGGames(
-    playerAddress: string
-  ) {
-    return RPG.find({
-      player1Address: playerAddress,
-      player2Address: playerAddress
-    })
-      .lean<IRPG[]>()
-      .exec();
-  }
+  static async getRPGGames(playerAddress: string) {
+  return RPG.find({
+    $or: [
+      { player1Address: playerAddress },
+      { player2Address: playerAddress }
+    ],
+  })
+    .lean<IRPG[]>()
+    .exec();
+}
 
   /**
    * @notice updates rpg game data

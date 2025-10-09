@@ -5,16 +5,25 @@ import { Plus } from "lucide-react";
 import { useEffect, useState } from "react";
 import { PlayNewGame } from "@/components/newGameForm";
 import { IRPG } from "@/types";
-import { walletService } from "@/lib/services/walletService";
+import { useContext } from "react";
+import { WalletContext } from "@/lib/utils/walletContext";
+import {
+  formatDate,
+  formatRemainingTime,
+  shortenAddress,
+} from "@/lib/utils/helpers";
+import { formatEther } from "ethers";
 
 export default function Home() {
   const [showModal, setShowModal] = useState(false);
   const [games, setGames] = useState<IRPG[]>([]);
-  const [account, setAccount] = useState<string | null>(null);
+  const [now, setNow] = useState(Date.now());
+
+  let { account, balance } = useContext(WalletContext);
 
   const fetchGames = async (): Promise<IRPG[]> => {
     if (!account) return [];
-   console.log('here in fetch')
+
     try {
       const baseUrl =
         process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000";
@@ -31,24 +40,69 @@ export default function Home() {
       }
 
       const data = await res.json();
-      return data;
+      return data?.games || [];
     } catch (error) {
       console.error("Error fetching games:", error);
       return [];
     }
   };
 
-
   useEffect(() => {
-    if (!walletService.account) return;
+    if (!account) return;
     (async () => {
       const data = await fetchGames();
       setGames(data);
     })();
-  }, [walletService]);
+  }, [account]);
+
+  useEffect(() => {
+    const timer = setInterval(() => setNow(Date.now()), 1000);
+    return () => clearInterval(timer);
+  }, []);
+
+  const getRemaining = (endTime: number) => {
+    return Math.max(0, Math.floor((endTime * 1000 - now) / 1000));
+  };
+
+  const getGameStatus = (
+    account: string,
+    timeRemaining: string | number,
+    progress: string,
+    player1: string,
+    status: string
+  ) => {
+    const role =
+      account.toLowerCase() === player1 ? "player_one" : "player_two";
+
+    if (status !== "active") return "--";
+
+    const time = Number(timeRemaining);
+
+    if (isNaN(time)) return "--";
+
+    if (
+      Number(timeRemaining) > 0 &&
+      progress === "created" &&
+      role === "player_two"
+    )
+      return "move";
+    if (
+      Number(timeRemaining) === 0 &&
+      progress === "created" &&
+      role === "player_one"
+    )
+      return "Refund";
+    if (
+      Number(timeRemaining) === 0 &&
+      progress === "moved" &&
+      role === "player_one"
+    )
+      return "solve";
+    return "--";
+  };
 
   return (
-    <div className="font-sans grid grid-rows-[20px_1fr_20px] items-center w-full justify-items-center min-h-screen pb-20 gap-16 sm:p-20">
+    <div className="font-sans grid grid-rows-[20px_1fr_20px] w-full justify-items-center min-h-screen pb-20 gap-16 sm:p-20">
       <main className="w-full flex flex-col gap-4">
         <div className="flex flex justify-between items-center">
           <ul className="flex gap-4 items-center">
@@ -111,37 +165,71 @@ export default function Home() {
                   </th>
 
                   <th className="px-4 py-3 text-left font-semibold text-gray-300">
+                    Remaining Time
+                  </th>
+
+                  <th className="px-4 py-3 text-left font-semibold text-gray-300">
                     Action
                   </th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-800">
-                {games && games.length > 0 ? (
-                  games.map((game) => (
-                    <tr className="hover:bg-gray-800/60 transition">
-                      <td className="px-6 py-4 text-sm text-blue-400 max-w-[150px]">
-                        1.
-                      </td>
-                      <td className="px-6 py-4 text-sm text-gray-100">
-                        22-02-2025
-                      </td>
-                      <td className="px-6 py-4 text-sm text-gray-100">
-                        Player 1
-                      </td>
-                      <td className="px-6 py-4 text-sm text-gray-100">
-                        0x02323...3453
-                      </td>
-                      <td className="px-6 py-4 text-sm text-gray-100">2 ETH</td>
-                      <td className="px-6 py-4 text-sm text-gray-100">Win</td>
-                      <td className="px-6 py-4 text-sm text-gray-100">
-                        <Button variant="outline">Reveal</Button>
-                      </td>
-                    </tr>
-                  ))
+                {account && games && games.length > 0 ? (
+                  games.map((game, index) => {
+                    const remaining = getRemaining(
+                      Number(game.lastAction) + 5 * 60
+                    );
+                    const isDisabled = remaining > 0;
+
+                    return (
+                      <tr className="hover:bg-gray-800/60 transition">
+                        <td className="px-6 py-4 text-sm text-blue-400 max-w-[150px]">
+                          {index + 1}
+                        </td>
+                        <td className="px-6 py-4 text-sm text-gray-100">
+                          {formatDate(Number(game.createdAt) * 1000)}
+                        </td>
+                        <td className="px-6 py-4 text-sm text-gray-100">
+                          {game.player1Address === account?.toLowerCase()
+                            ? "Player One"
+                            : "Player 2"}
+                        </td>
+                        <td className="px-6 py-4 text-sm text-gray-100">
+                          {game.player1Address === account?.toLowerCase()
+                            ? shortenAddress(game.player2Address)
+                            : shortenAddress(game.player1Address)}
+                        </td>
+                        <td className="px-6 py-4 text-sm text-gray-100">
+                          {formatEther(game.stakedETH)} ETH
+                        </td>
+                        <td className="px-6 py-4 text-sm text-gray-100">
+                          {game.status?.toUpperCase()}
+                        </td>
+                        <td className="px-6 py-4 text-sm text-gray-100">
+                          {formatRemainingTime(remaining)}
+                        </td>
+                        <td className="px-6 py-4 text-sm text-gray-100">
+                          {
+                            <Button variant="outline">
+                              {getGameStatus(
+                                account,
+                                remaining,
+                                game.progress,
+                                game.player1Address,
+                                game.status as string
+                              )}
+                            </Button>
+                          }
+                        </td>
+                      </tr>
+                    );
+                  })
                 ) : (
                   <tr>
                     <td colSpan={9} className="text-center p-4 text-gray-100">
-                     { walletService.account ? "No Data Available" : "Please connect your wallet!"}
+                      {account
+                        ? "No Data Available"
+                        : "Please connect your wallet!"}
                     </td>
                   </tr>
                 )}

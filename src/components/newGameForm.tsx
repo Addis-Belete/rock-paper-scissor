@@ -6,10 +6,8 @@ import { Select, SelectItem } from "@/components/ui/select";
 import { useState } from "react";
 import { RPGService } from "@/lib/services/rpgService";
 import { walletService } from "@/lib/services/walletService";
-import { DatabaseService } from "@/lib/services/databaseService";
 import { IRPG } from "@/types";
 import { parseEther } from "ethers";
-import { RPGRepository } from "@/lib/repositories/rpgRepository";
 
 export function PlayNewGame({
   show,
@@ -74,17 +72,19 @@ export function PlayNewGame({
       });
 
       await res.json();
-
+      if(res.ok) {
       setFormData({
         move: "",
         player2: "",
         salt: "",
         stakeAmount: "",
       });
+      }
     } catch (error) {
       console.log(error);
     } finally {
       setLoading(false);
+      
     }
   };
   return (

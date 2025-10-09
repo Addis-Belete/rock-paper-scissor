@@ -8,7 +8,7 @@ export async function POST(req: Request) {
 
     const body = await req.json();
     const { rpg } = body;
-
+    
     if (!rpg) {
       return NextResponse.json(
         { error: "Missing required fields" },
