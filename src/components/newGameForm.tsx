@@ -55,22 +55,32 @@ export function PlayNewGame({
         walletService.getSigner(),
         rpgAddress as string
       );
-      console.log(lastAction, "last");
-      console.log(rpgAddress, "rpg");
-      const player1 = '0x7Bc71F32E6Abb6bE619B5e31565fef0006a8e31d'
+
       const rpgData: IRPG = {
         rpgAddress: rpgAddress as string,
-        player1Address: player1.toLowerCase(),
+        player1Address: walletService.account?.toLowerCase() || "",
         player2Address: formData.player2.toLowerCase(),
-        stakedETH: parseEther(formData.stakeAmount).toString(), // save in wei
+        stakedETH: Number(parseEther(formData.stakeAmount)), // save in wei
         createdAt: lastAction.toString(),
         lastAction: lastAction.toString(),
-        status: null,
+        status: 'active',
         progress: "created",
       };
 
-    const data =  await RPGRepository.saveNewGame(rpgData);
-    console.log(data)
+      const res = await fetch("/api/v1/saveRpg", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ rpg: rpgData }),
+      });
+
+      await res.json();
+
+      setFormData({
+        move: "",
+        player2: "",
+        salt: "",
+        stakeAmount: "",
+      });
     } catch (error) {
       console.log(error);
     } finally {

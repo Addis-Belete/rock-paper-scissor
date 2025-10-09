@@ -8,7 +8,7 @@ export const metadata: Metadata = {
   description: "Rock Paper Scissors Game",
 };
 
-DatabaseService.connect()
+DatabaseService.connect();
 
 export default function RootLayout({
   children,
@@ -18,9 +18,7 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className="dark">
-        <Header >
-        {children}
-        </Header>
+        <Header>{children}</Header>
       </body>
     </html>
   );

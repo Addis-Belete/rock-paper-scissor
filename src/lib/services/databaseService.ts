@@ -23,6 +23,7 @@ export class DatabaseService {
    */
   static async connect(): Promise<typeof mongoose> {
     if (cached.conn) return cached.conn;
+       console.log('here in connect')
 
     if (!cached.promise) {
       cached.promise = ErrorHandler.withRetry(() =>

@@ -2,14 +2,50 @@
 
 import { Button } from "@/components/ui/button";
 import { Plus } from "lucide-react";
-import { walletService } from "@/lib/services/walletService";
-import { RPGService } from "@/lib/services/rpgService";
-import { useState } from "react";
-import { Modal } from "@/components/ui/modal";
+import { useEffect, useState } from "react";
 import { PlayNewGame } from "@/components/newGameForm";
+import { IRPG } from "@/types";
+import { walletService } from "@/lib/services/walletService";
 
 export default function Home() {
   const [showModal, setShowModal] = useState(false);
+  const [games, setGames] = useState<IRPG[]>([]);
+  const [account, setAccount] = useState<string | null>(null);
+
+  const fetchGames = async (): Promise<IRPG[]> => {
+    if (!account) return [];
+   console.log('here in fetch')
+    try {
+      const baseUrl =
+        process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000";
+      const url = `${baseUrl}/api/v1/getRpgGames?address=${account}`;
+
+      const res = await fetch(url, {
+        method: "GET",
+        headers: { "Content-Type": "application/json" },
+        cache: "no-store",
+      });
+
+      if (!res.ok) {
+        throw new Error(`Failed to fetch games: ${res.status}`);
+      }
+
+      const data = await res.json();
+      return data;
+    } catch (error) {
+      console.error("Error fetching games:", error);
+      return [];
+    }
+  };
+
+
+  useEffect(() => {
+    if (!walletService.account) return;
+    (async () => {
+      const data = await fetchGames();
+      setGames(data);
+    })();
+  }, [walletService]);
 
   return (
     <div className="font-sans grid grid-rows-[20px_1fr_20px] items-center w-full justify-items-center min-h-screen pb-20 gap-16 sm:p-20">
@@ -42,7 +78,12 @@ export default function Home() {
               <span>Create New Game</span>
             </Button>
 
-            {showModal && <PlayNewGame show={showModal} onClose={() => setShowModal(false)}/>}
+            {showModal && (
+              <PlayNewGame
+                show={showModal}
+                onClose={() => setShowModal(false)}
+              />
+            )}
           </div>
         </div>
         <div className="flex gap-4 flex-col">
@@ -75,31 +116,40 @@ export default function Home() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-800">
-                <tr className="hover:bg-gray-800/60 transition">
-                  <td className="px-6 py-4 text-sm text-blue-400 max-w-[150px]">
-                    1.
-                  </td>
-                  <td className="px-6 py-4 text-sm text-gray-100">
-                    22-02-2025
-                  </td>
-                  <td className="px-6 py-4 text-sm text-gray-100">Player 1</td>
-                  <td className="px-6 py-4 text-sm text-gray-100">
-                    0x02323...3453
-                  </td>
-                  <td className="px-6 py-4 text-sm text-gray-100">2 ETH</td>
-                  <td className="px-6 py-4 text-sm text-gray-100">Win</td>
-                  <td className="px-6 py-4 text-sm text-gray-100">
-                    <Button variant="outline">Reveal</Button>
-                  </td>
-                </tr>
+                {games && games.length > 0 ? (
+                  games.map((game) => (
+                    <tr className="hover:bg-gray-800/60 transition">
+                      <td className="px-6 py-4 text-sm text-blue-400 max-w-[150px]">
+                        1.
+                      </td>
+                      <td className="px-6 py-4 text-sm text-gray-100">
+                        22-02-2025
+                      </td>
+                      <td className="px-6 py-4 text-sm text-gray-100">
+                        Player 1
+                      </td>
+                      <td className="px-6 py-4 text-sm text-gray-100">
+                        0x02323...3453
+                      </td>
+                      <td className="px-6 py-4 text-sm text-gray-100">2 ETH</td>
+                      <td className="px-6 py-4 text-sm text-gray-100">Win</td>
+                      <td className="px-6 py-4 text-sm text-gray-100">
+                        <Button variant="outline">Reveal</Button>
+                      </td>
+                    </tr>
+                  ))
+                ) : (
+                  <tr>
+                    <td colSpan={9} className="text-center p-4 text-gray-100">
+                     { walletService.account ? "No Data Available" : "Please connect your wallet!"}
+                    </td>
+                  </tr>
+                )}
               </tbody>
             </table>
           </div>
         </div>
       </main>
-      <footer className="row-start-3 flex gap-[24px] flex-wrap items-center justify-center">
-        <p>This is the footer of RPS game</p>
-      </footer>
     </div>
   );
 }

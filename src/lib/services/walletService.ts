@@ -7,6 +7,7 @@ class WalletService {
   private static instance: WalletService;
   private provider?: BrowserProvider;
   private signer?: Signer;
+  account?: string
 
   private constructor() {
     if (typeof window !== "undefined" && window.ethereum) {
@@ -25,18 +26,19 @@ class WalletService {
   }
 
   // Connect wallet
-  async connect(): Promise<string> {
+  async connect(): Promise<void> {
     if (!this.provider) throw new Error("MetaMask not found.");
 
     await this.switchToSepolia();
 
     await window.ethereum.request({ method: "eth_requestAccounts" });
     this.signer = await this.provider.getSigner();
-    return await this.signer.getAddress();
+    this.account = await this.signer.getAddress()
   }
 
   async disconnect() {
     this.signer = undefined;
+    this.account = undefined
   }
 
   // Get balance
@@ -84,6 +86,8 @@ class WalletService {
   getSigner(): Signer | undefined {
     return this.signer;
   }
+
+
 }
 
 export const walletService = WalletService.getInstance();

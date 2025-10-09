@@ -8,22 +8,23 @@ import { shortenAddress } from "@/lib/utils/helpers";
 
 export function Header({ children }: { children: React.ReactNode }) {
   const [account, setAccount] = useState<string | null>(null);
-  const [balance, setBalance] = useState<string | null> (null)
-
+  const [balance, setBalance] = useState<string | null>(null);
 
   const connectWallet = async () => {
     try {
-     const address = await walletService.connect();
-     console.log(address, 'connected wallet')
-     setAccount(address)
-    } catch (error) {}
+      await walletService.connect();
+      setAccount(walletService.account || null)
+    } catch (error) {
+      console.error(error);
+      throw new Error("falied to connect wallet");
+    }
   };
 
   const disconnect = async () => {
-     walletService.disconnect()
-     setAccount(null)
-     setBalance(null)
-  }
+    walletService.disconnect();
+    setAccount(null);
+    setBalance(null);
+  };
   return (
     <div className="min-h-screen bg-background">
       <header className="border-b border-border bg-card/50 backdrop-blur-sm mb-8">
@@ -43,15 +44,13 @@ export function Header({ children }: { children: React.ReactNode }) {
               </div>
             </div>
             <div className="flex gap-2 items-center">
-              {account && (
-                 <Badge>{shortenAddress(account)}</Badge>
-              )}
-            <Button
-              className="bg-primary/10 text-primary border-primary/20"
-              onClick={account ? disconnect : connectWallet}
-            >
-              {account ? "Disconnect" : "Connect"}
-            </Button>
+              {account && <Badge>{shortenAddress(account)}</Badge>}
+              <Button
+                className="bg-primary/10 text-primary border-primary/20"
+                onClick={account ? disconnect : connectWallet}
+              >
+                {account ? "Disconnect" : "Connect"}
+              </Button>
             </div>
           </div>
         </div>

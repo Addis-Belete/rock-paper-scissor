@@ -7,7 +7,7 @@ export class RPGRepository {
    * @param data {See IRPG}
    */
   static async saveNewGame(data: IRPG) {
-    const result = await RPG.create(data);
+    const result = await RPG.insertOne(data);
     return result.toObject();
   }
 
@@ -16,13 +16,11 @@ export class RPGRepository {
    */
 
   static async getRPGGames(
-    playerAddress: string,
-    status: "active" | "win" | "loss" | "cancelled" | "draw"
+    playerAddress: string
   ) {
     return RPG.find({
       player1Address: playerAddress,
-      player2Address: playerAddress,
-      status,
+      player2Address: playerAddress
     })
       .lean<IRPG[]>()
       .exec();

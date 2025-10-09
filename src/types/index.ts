@@ -3,9 +3,9 @@ export interface IRPG {
   rpgAddress: string;
   player1Address: string;
   player2Address: string;
-  stakedETH: string;
+  stakedETH: number;
   createdAt: string;
   lastAction: string;
-  status: "win" | "loss" | "cancelled" | "draw" | null;
+  status: 'active' | "win" | "loss" | "cancelled" | "draw" | null;
   progress: "created" | "moved" | "solved"
 }
