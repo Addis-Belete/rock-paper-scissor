@@ -1,0 +1,61 @@
+export function shortenAddress(addr: string, chars = 6) {
+  return `${addr.slice(0, chars)}...${addr.slice(-chars)}`;
+}
+
+export function formatDate(timestamp: number | string) {
+  const date = new Date(Number(timestamp));
+  return date.toLocaleDateString("en-US", {
+    year: "numeric",
+    month: "long",
+    day: "numeric",
+  });
+}
+
+export function formatRemainingTime(seconds: number): string {
+  const hrs = Math.floor(seconds / 3600);
+  const mins = Math.floor((seconds % 3600) / 60);
+  const secs = seconds % 60;
+
+  // Format with leading zeros if you want (e.g. 01:09:05)
+  const pad = (n: number) => n.toString().padStart(2, "0");
+
+  if (hrs > 0) return `${pad(hrs)}:${pad(mins)}:${pad(secs)}`;
+  if (mins > 0) return `${pad(mins)}:${pad(secs)}`;
+  return `${secs}s`;
+}
+
+export const getGameStatus = (
+  account: string,
+  timeRemaining: string | number,
+  progress: string,
+  player1: string,
+  status: string
+) => {
+  const role = account.toLowerCase() === player1 ? "player_one" : "player_two";
+
+  if (status !== "active") return "--";
+
+  const time = Number(timeRemaining);
+
+  if (isNaN(time)) return "--";
+
+  if (
+    Number(timeRemaining) >= 0 &&
+    progress === "created" &&
+    role === "player_two"
+  )
+    return "move";
+  if (
+    Number(timeRemaining) === 0 &&
+    progress === "created" &&
+    role === "player_one"
+  )
+    return "Refund";
+  if (
+    Number(timeRemaining) === 0 &&
+    progress === "moved" &&
+    role === "player_one"
+  )
+    return "solve";
+  return "--";
+};

@@ -71,6 +71,7 @@
   --sidebar-accent-foreground: oklch(0.95 0.01 240);
   --sidebar-border: oklch(0.22 0.02 240);
   --sidebar-ring: oklch(0.65 0.15 200);
+   --overlay: rgba(0, 0, 0, 0.6);
 }
 
 @theme inline {

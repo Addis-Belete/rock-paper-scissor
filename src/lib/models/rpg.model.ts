@@ -1,0 +1,20 @@
+import { Model, Schema, model, models } from "mongoose";
+import { IRPG } from "@/types";
+
+const RPGSchema = new Schema({
+  rpgAddress: { type: String, required: true },
+  player1Address: { type: String, required: true },
+  player2Address: { type: String, required: true },
+  stakedETH: { type: Number, required: true },
+  createdAt: { type: String, required: true },
+  lastAction: { type: String, required: true },
+  status: { enum: ["active", "win", "loss", "cancelled", "draw"], type: String },
+  progress: {
+    enum: ["created", "moved", "solved"],
+    type: String,
+    required: true,
+  },
+});
+RPGSchema.index({ player1Address: 1, playerAddress: 1 }); // index for faster queries by address and blockNumber
+
+export const RPG: Model<IRPG> = models?.RPG || model("RPG", RPGSchema);
