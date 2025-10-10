@@ -8,8 +8,8 @@ export class ErrorHandler {
     10
   );
   private static errorDisplayTimeout = parseInt(
-    process.env.ERROR_DISPLAY_TIMEOUT || "5000",
-    10
+    process.env.ERROR_DISPLAY_TIMEOUT || "1000"
+  
   );
 
   /**
@@ -52,8 +52,8 @@ export class ErrorHandler {
   /**
    * Handle frontend error banner
    */
-  static handleUserError(setIsError: (val: boolean) => void) {
+  static handleError(setIsError: (val: boolean) => void) {
     setIsError(true);
-    setTimeout(() => setIsError(false), this.errorDisplayTimeout);
+    setTimeout(() => setIsError(false), 2000);
   }
 }

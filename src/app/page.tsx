@@ -31,8 +31,8 @@ export default function Home() {
 
   let { account, balance } = useContext(WalletContext);
 
-  const fetchGames = async (): Promise<IRPG[]> => {
-    if (!account) return [];
+  const fetchGames = async (): Promise<void> => {
+    if (!account) return;
 
     try {
       const baseUrl =
@@ -50,18 +50,34 @@ export default function Home() {
       }
 
       const data = await res.json();
-      return data?.games || [];
+      setGames(data?.games);
     } catch (error) {
       console.error("Error fetching games:", error);
-      return [];
     }
   };
 
   useEffect(() => {
+    const eventSource = new EventSource("/api/v1/stream");
+
+    eventSource.onmessage = (event) => {
+      const change = JSON.parse(event.data);
+      console.log("Change received:", change);
+      fetchGames()
+    };
+
+    eventSource.onerror = (err) => {
+      console.error("SSE error:", err);
+      eventSource.close();
+    };
+
+    return () => eventSource.close();
+  }, []);
+
+  useEffect(() => {
     if (!account) return;
     (async () => {
-      const data = await fetchGames();
-      setGames(data);
+      await fetchGames();
+      
     })();
   }, [account]);
 
@@ -85,7 +101,6 @@ export default function Home() {
             <li>
               <Button variant="outline">Completed</Button>
             </li>
-       
           </ul>
 
           <div className="">
@@ -100,8 +115,10 @@ export default function Home() {
 
             {showModal && (
               <PlayNewGame
+              account={account}
                 show={showModal}
                 onClose={() => setShowModal(false)}
+                refetch={fetchGames}
               />
             )}
           </div>

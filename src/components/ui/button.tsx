@@ -24,7 +24,7 @@ export function Button({
   const variantStyles =
     variant === "default"
       ? "bg-blue-500 text-white hover:bg-blue-600"
-      : "border border-gray-400 text-gray-700 hover:bg-gray-100";
+      : "border border-gray-400 text-gray-200 hover:bg-gray-100";
 
   const sizeStyles =
     size === "sm"
