@@ -7,6 +7,7 @@ type Config = {
   etherscanBaseUrl: string;
   offset: string;
   hasherAddress: string;
+  defaultGasLimit: string
 };
 
 export const config: Config = {
@@ -19,5 +20,6 @@ export const config: Config = {
     "mongodb://localhost:27017/?directConnection=true",
   etherscanBaseUrl: "https://api.etherscan.io/api",
   offset: process.env.OFFSET || "10000",
-  hasherAddress: "0x8053bB097424eDF8F151516c3114E6d3e054CC62" // deployed on sepolia
+  hasherAddress: "0x8053bB097424eDF8F151516c3114E6d3e054CC62", // deployed on sepolia
+  defaultGasLimit: '100000'
 };
