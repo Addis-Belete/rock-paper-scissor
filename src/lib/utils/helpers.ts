@@ -33,29 +33,21 @@ export const getGameStatus = (
 ) => {
   const role = account.toLowerCase() === player1 ? "player_one" : "player_two";
 
-  if (status !== "active") return "--";
+  if (status !== "active") return null;
 
   const time = Number(timeRemaining);
 
-  if (isNaN(time)) return "--";
+  if (isNaN(time)) return null;
 
+  if (time >= 0 && progress === "created" && role === "player_two")
+    return "play";
   if (
-    Number(timeRemaining) >= 0 &&
-    progress === "created" &&
-    role === "player_two"
+    time === 0 &&
+    ((progress === "created" && role === "player_one") ||
+      (progress === "moved" && role === "player_two"))
   )
-    return "move";
-  if (
-    Number(timeRemaining) === 0 &&
-    progress === "created" &&
-    role === "player_one"
-  )
-    return "Refund";
-  if (
-    Number(timeRemaining) === 0 &&
-    progress === "moved" &&
-    role === "player_one"
-  )
+    return "refund";
+  if (time === 0 && progress === "moved" && role === "player_one")
     return "solve";
-  return "--";
+  return null;
 };

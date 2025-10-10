@@ -15,12 +15,19 @@ import {
 import { formatEther } from "ethers";
 import { getGameStatus } from "@/lib/utils/helpers";
 import { Play } from "@/components/play";
+import { Solve } from "@/components/solve";
+import { Refund } from "@/components/refund";
 
 export default function Home() {
   const [showModal, setShowModal] = useState(false);
   const [games, setGames] = useState<IRPG[]>([]);
   const [now, setNow] = useState(Date.now());
-  const [showPlayModal, setShowPlayModal] = useState(false);
+  const [modal, setModal] = useState({
+    type: null,
+    game: null,
+    display: false,
+  } as { type: "play" | "solve" | "refund" | null; game: IRPG | null; display: boolean });
+  const [loading, setLoading] = useState(false);
 
   let { account, balance } = useContext(WalletContext);
 
@@ -76,17 +83,9 @@ export default function Home() {
               <Button variant="outline">Active</Button>
             </li>
             <li>
-              <Button variant="outline">Win</Button>
+              <Button variant="outline">Completed</Button>
             </li>
-            <li>
-              <Button variant="outline">Loss</Button>
-            </li>
-            <li>
-              <Button variant="outline">Draw</Button>
-            </li>
-            <li>
-              <Button variant="outline">Cancelled</Button>
-            </li>
+       
           </ul>
 
           <div className="">
@@ -146,8 +145,22 @@ export default function Home() {
                     const remaining = getRemaining(
                       Number(game.lastAction) + 5 * 60
                     );
+                    const status = getGameStatus(
+                      account,
+                      remaining,
+                      game.progress,
+                      game.player1Address,
+                      game.status as string
+                    );
+                    const role =
+                      game.player1Address === account?.toLowerCase()
+                        ? "Player One"
+                        : "Player Two";
                     return (
-                      <tr className="hover:bg-gray-800/60 transition" key={index}>
+                      <tr
+                        className="hover:bg-gray-800/60 transition"
+                        key={index}
+                      >
                         <td className="px-6 py-4 text-sm text-blue-400 max-w-[150px]">
                           {index + 1}
                         </td>
@@ -155,9 +168,7 @@ export default function Home() {
                           {formatDate(Number(game.createdAt) * 1000)}
                         </td>
                         <td className="px-6 py-4 text-sm text-gray-100">
-                          {game.player1Address === account?.toLowerCase()
-                            ? "Player One"
-                            : "Player 2"}
+                          {role}
                         </td>
                         <td className="px-6 py-4 text-sm text-gray-100">
                           {game.player1Address === account?.toLowerCase()
@@ -174,29 +185,23 @@ export default function Home() {
                           {formatRemainingTime(remaining)}
                         </td>
                         <td className="px-6 py-4 text-sm text-gray-100">
-                          {
+                          {status ? (
                             <Button
                               variant="outline"
-                              onClick={() => setShowPlayModal(true)}
+                              onClick={() =>
+                                setModal({
+                                  display: true,
+                                  game,
+                                  type: status,
+                                })
+                              }
                             >
-                              {getGameStatus(
-                                account,
-                                remaining,
-                                game.progress,
-                                game.player1Address,
-                                game.status as string
-                              )}
+                              {status}
                             </Button>
-                          }
+                          ) : (
+                            "--"
+                          )}
                         </td>
-                        {showPlayModal && (
-                          <Play
-                            balance={balance || '0'}
-                            rpgData={game}
-                            show={showPlayModal}
-                            onClose={() => setShowPlayModal(false)}
-                          />
-                        )}
                       </tr>
                     );
                   })
@@ -213,6 +218,32 @@ export default function Home() {
             </table>
           </div>
         </div>
+        {modal?.type === "solve" && modal?.game && (
+          <Solve
+            balance={balance || "0"}
+            rpgData={modal?.game}
+            show={modal.display}
+            onClose={() => setModal({ display: false, game: null, type: null })}
+          />
+        )}
+
+        {modal?.type === "play" && modal?.game && (
+          <Play
+            balance={balance || "0"}
+            rpgData={modal?.game}
+            show={modal.display}
+            onClose={() => setModal({ display: false, game: null, type: null })}
+          />
+        )}
+        {modal?.type === "refund" && modal?.game && (
+          <Refund
+            balance={balance || "0"}
+            rpgData={modal?.game}
+            show={modal.display}
+            account={account}
+            onClose={() => setModal({ display: false, game: null, type: null })}
+          />
+        )}
       </main>
     </div>
   );

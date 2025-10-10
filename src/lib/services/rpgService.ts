@@ -92,7 +92,7 @@ export class RPGService {
     return await contract.solve(move, salt, overrides);
   }
 
-  static async callTimeOut(address: string, signer: Signer | undefined) {
+  static async callJ2TimeOut(address: string, signer: Signer | undefined) {
     if (!signer) throw new Error("Wallet not connected");
 
     const contract = new Contract(address, rpgAbi, signer) as any;
@@ -106,5 +106,21 @@ export class RPGService {
       gasLimit: estimatedGas + BigInt(config.defaultGasLimit),
     };
     return await contract.j2Timeout(overrides);
+  }
+
+  static async callJ1TimeOut(address: string, signer: Signer | undefined) {
+    if (!signer) throw new Error("Wallet not connected");
+
+    const contract = new Contract(address, rpgAbi, signer) as any;
+    let estimatedGas: bigint;
+    try {
+      estimatedGas = await contract.estimateGas.j1Timeout();
+    } catch (err) {
+      estimatedGas = BigInt(config.defaultGasLimit);
+    }
+    const overrides = {
+      gasLimit: estimatedGas + BigInt(config.defaultGasLimit),
+    };
+    return await contract.j1Timeout(overrides);
   }
 }
