@@ -39,10 +39,25 @@ export class RPGService {
     return lastAction;
   }
 
-  static async move(address: string, move: string, signer: Signer | undefined, amount: string) {
+  static async move(
+    address: string,
+    move: string,
+    signer: Signer | undefined,
+    amount: string
+  ) {
     if (!signer) throw new Error("Wallet not connected");
-    const contract = new Contract(address, rpgAbi, signer);
-    return await contract.play(move, {value: amount});
+    const contract = new Contract(address, rpgAbi, signer) as any;
+    let estimatedGas: bigint;
+    try {
+      estimatedGas = await contract.estimateGas.play(move, { value: amount });
+    } catch (err) {
+      estimatedGas = BigInt(config.defaultGasLimit);
+    }
+    const overrides = {
+    gasLimit: estimatedGas + BigInt(config.defaultGasLimit), // add buffer
+    value: amount
+  };
+    return await contract.play(move, overrides);
   }
 
   static async getHash(
@@ -56,7 +71,9 @@ export class RPGService {
     return hash;
   }
 
-  static async solve() {}
+  static async solve(signer: Signer | undefined, salt: string, move: string) {
+      if(!signer) throw new Error('Wallet not connected')
+  }
 
   static async callTimeOut() {}
 }
