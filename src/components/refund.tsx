@@ -31,7 +31,7 @@ export function Refund({
 
       const _rpgData: IRPG = {
         ...rpgData,
-        progress: "moved",
+        status: "completed"
       };
       const res = await fetch("/api/v1/updateRpg", {
         method: "POST",
@@ -55,9 +55,9 @@ export function Refund({
 
       const _rpgData: IRPG = {
         ...rpgData,
-        progress: "moved",
+        status: "completed"
       };
-      const res = await fetch("/api/v1/updateRpg", {
+       await fetch("/api/v1/updateRpg", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ rpg: _rpgData }),

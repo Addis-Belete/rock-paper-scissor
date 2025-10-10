@@ -95,7 +95,7 @@ export default function Home() {
               onClick={() => setShowModal(true)}
             >
               <Plus />
-              <span>Create New Game</span>
+              <span>Play New Game</span>
             </Button>
 
             {showModal && (

@@ -6,6 +6,6 @@ export interface IRPG {
   stakedETH: number;
   createdAt: string;
   lastAction: string;
-  status: 'active' | "win" | "loss" | "cancelled" | "draw" | null;
-  progress: "created" | "moved" | "solved"
+  status: "active" | "completed" | null;
+  progress: "created" | "moved" | "solved";
 }

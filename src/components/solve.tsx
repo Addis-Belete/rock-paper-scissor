@@ -6,8 +6,6 @@ import { useState } from "react";
 import { RPGService } from "@/lib/services/rpgService";
 import { walletService } from "@/lib/services/walletService";
 import { IRPG } from "@/types";
-import { formatEther } from "ethers";
-import { Alert, AlertDescription } from "@/components/ui/Alert";
 import { Input } from "@/components/ui/input";
 
 export function Solve({
@@ -46,6 +44,7 @@ export function Solve({
       const _rpgData: IRPG = {
         ...rpgData,
         progress: "solved",
+        status: "completed",
         lastAction: lastAction.toString(), // add completed status
       };
 
