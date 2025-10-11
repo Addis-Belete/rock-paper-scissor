@@ -8,37 +8,59 @@ import { RPGService } from "@/lib/services/rpgService";
 import { walletService } from "@/lib/services/walletService";
 import { IRPG } from "@/types";
 import { parseEther } from "ethers";
+import { validateFrom } from "@/lib/utils/validation";
+import { Alert, AlertDescription } from "@/components/ui/Alert";
+import { ErrorHandler } from "@/lib/utils/errorHandler";
 
 export function PlayNewGame({
+  account,
   show,
   onClose,
+  refetch,
 }: {
   show: boolean;
   onClose: () => void;
+  account: string | null;
+  refetch: () => Promise<void>;
 }) {
   const [formData, setFormData] = useState({
-    move: "",
+    move: "1",
     player2: "",
     salt: "",
     stakeAmount: "",
   });
 
   const [loading, setLoading] = useState(false);
+  const [errors, setErrors] = useState<{
+    player2?: string;
+    salt?: string;
+    stakeAmount?: string;
+  }>({});
+  const [isError, setIsError] = useState(false);
+  const [errorMessage, setErrorMessage] = useState("");
 
   const handleChange = (
     e:
       | React.ChangeEvent<HTMLInputElement>
       | React.ChangeEvent<HTMLSelectElement>
   ) => {
-    const { name, value, type } = e.target;
+    const { name, value } = e.target;
     setFormData((prev) => ({
       ...prev,
       [name]: value,
     }));
+    setErrors((prev) => ({ ...prev, [name]: undefined })); // clear error on change
+  };
+
+  const validate = () => {
+    const newErrors = validateFrom(formData, account);
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
   };
 
   const playNewGame = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!validate()) return;
     setLoading(true);
     try {
       const rpgAddress = await RPGService.playNewRPGGame(
@@ -61,7 +83,7 @@ export function PlayNewGame({
         stakedETH: Number(parseEther(formData.stakeAmount)), // save in wei
         createdAt: lastAction.toString(),
         lastAction: lastAction.toString(),
-        status: 'active',
+        status: "active",
         progress: "created",
       };
 
@@ -71,20 +93,20 @@ export function PlayNewGame({
         body: JSON.stringify({ rpg: rpgData }),
       });
 
-      await res.json();
-      if(res.ok) {
-      setFormData({
-        move: "",
-        player2: "",
-        salt: "",
-        stakeAmount: "",
-      });
+      const data = await res.json();
+      if (res.ok) {
+        await refetch();
+        onClose();
+      } else {
+        ErrorHandler.handleError(() => setIsError(true));
+        setErrorMessage(data?.error);
       }
     } catch (error) {
+      ErrorHandler.handleError(() => setIsError(true));
+      setErrorMessage("Something went wrong. Please try again!");
       console.log(error);
     } finally {
       setLoading(false);
-      
     }
   };
   return (
@@ -112,6 +134,9 @@ export function PlayNewGame({
             name="stakeAmount"
             onChange={(e) => handleChange(e)}
           />
+          {errors.stakeAmount && (
+            <p className="text-red-600">{errors.stakeAmount}</p>
+          )}
         </div>
 
         <div>
@@ -121,6 +146,7 @@ export function PlayNewGame({
             placeholder="Enter slat"
             onChange={(e) => handleChange(e)}
           />
+          {errors.salt && <p className="text-red-600">{errors.salt}</p>}
         </div>
         <div>
           <Label htmlFor="player2">Enter Player 2 Address</Label>
@@ -129,11 +155,20 @@ export function PlayNewGame({
             name="player2"
             onChange={(e) => handleChange(e)}
           />
+          {errors.player2 && <p className="text-red-600">{errors.player2}</p>}
         </div>
 
         <Button type="submit" className="mt-2" disabled={loading}>
-          {loading ? "Submitting..." : "Submit"}
+          {loading ? "Playing New Game..." : "Play New Game"}
         </Button>
+
+        {isError && (
+          <Alert>
+            <AlertDescription className="text-red-500">
+              {errorMessage}
+            </AlertDescription>
+          </Alert>
+        )}
 
         <Button variant="outline" onClick={onClose} disabled={loading}>
           Close

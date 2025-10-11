@@ -2,7 +2,7 @@
 
 import { Button } from "@/components/ui/button";
 import { Plus } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { PlayNewGame } from "@/components/newGameForm";
 import { IRPG } from "@/types";
 import { useContext } from "react";
@@ -15,18 +15,39 @@ import {
 import { formatEther } from "ethers";
 import { getGameStatus } from "@/lib/utils/helpers";
 import { Play } from "@/components/play";
+import { Solve } from "@/components/solve";
+import { Refund } from "@/components/refund";
+import { useRouter, useSearchParams } from "next/navigation";
 
 export default function Home() {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+
   const [showModal, setShowModal] = useState(false);
   const [games, setGames] = useState<IRPG[]>([]);
   const [now, setNow] = useState(Date.now());
-  const [showPlayModal, setShowPlayModal] = useState(false);
+  const [modal, setModal] = useState({
+    type: null,
+    game: null,
+    display: false,
+  } as { type: "play" | "solve" | "refund" | null; game: IRPG | null; display: boolean });
+
+  const [tab, setTab] = useState(searchParams.get("tab") || "active");
+
+  useEffect(() => {
+    const url = `?tab=${tab}`;
+    router.push(url, { scroll: false });
+  }, [tab, router]);
+
+  const filteredGames = useMemo(
+    () => games.filter((g) => g.status === tab),
+    [games, tab]
+  );
 
   let { account, balance } = useContext(WalletContext);
 
-  const fetchGames = async (): Promise<IRPG[]> => {
-    if (!account) return [];
-
+  const fetchGames = async (): Promise<void> => {
+    if (!account) return;
     try {
       const baseUrl =
         process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000";
@@ -43,18 +64,34 @@ export default function Home() {
       }
 
       const data = await res.json();
-      return data?.games || [];
+      setGames(data?.games);
     } catch (error) {
       console.error("Error fetching games:", error);
-      return [];
     }
   };
 
   useEffect(() => {
+    const eventSource = new EventSource("/api/v1/stream");
+
+    eventSource.onmessage = (event) => {
+      const change = JSON.parse(event.data);
+      console.log("Change received:", change);
+      fetchGames();
+    };
+
+    eventSource.onerror = (err) => {
+      console.error("SSE error:", err);
+      eventSource.close();
+    };
+
+    return () => eventSource.close();
+  }, []);
+
+ 
+  useEffect(() => {
     if (!account) return;
     (async () => {
-      const data = await fetchGames();
-      setGames(data);
+      await fetchGames();
     })();
   }, [account]);
 
@@ -72,21 +109,15 @@ export default function Home() {
       <main className="w-full flex flex-col gap-4">
         <div className="flex flex justify-between items-center">
           <ul className="flex gap-4 items-center">
-            <li>
-              <Button variant="outline">Active</Button>
-            </li>
-            <li>
-              <Button variant="outline">Win</Button>
-            </li>
-            <li>
-              <Button variant="outline">Loss</Button>
-            </li>
-            <li>
-              <Button variant="outline">Draw</Button>
-            </li>
-            <li>
-              <Button variant="outline">Cancelled</Button>
-            </li>
+            {["active", "completed"].map((t, index) => {
+              return (
+                <li key={index}>
+                  <Button variant="outline" onClick={() => setTab(t)} active={tab === t}>
+                     {t.charAt(0).toUpperCase() + t.slice(1)}
+                  </Button>
+                </li>
+              );
+            })}
           </ul>
 
           <div className="">
@@ -96,13 +127,15 @@ export default function Home() {
               onClick={() => setShowModal(true)}
             >
               <Plus />
-              <span>Create New Game</span>
+              <span>Play New Game</span>
             </Button>
 
             {showModal && (
               <PlayNewGame
+                account={account}
                 show={showModal}
                 onClose={() => setShowModal(false)}
+                refetch={fetchGames}
               />
             )}
           </div>
@@ -141,13 +174,27 @@ export default function Home() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-800">
-                {account && games && games.length > 0 ? (
-                  games.map((game, index) => {
+                {account && filteredGames && filteredGames.length > 0 ? (
+                  filteredGames.map((game, index) => {
                     const remaining = getRemaining(
                       Number(game.lastAction) + 5 * 60
                     );
+                    const status = getGameStatus(
+                      account,
+                      remaining,
+                      game.progress,
+                      game.player1Address,
+                      game.status as string
+                    );
+                    const role =
+                      game.player1Address === account?.toLowerCase()
+                        ? "Player One"
+                        : "Player Two";
                     return (
-                      <tr className="hover:bg-gray-800/60 transition" key={index}>
+                      <tr
+                        className="hover:bg-gray-800/60 transition"
+                        key={index}
+                      >
                         <td className="px-6 py-4 text-sm text-blue-400 max-w-[150px]">
                           {index + 1}
                         </td>
@@ -155,9 +202,7 @@ export default function Home() {
                           {formatDate(Number(game.createdAt) * 1000)}
                         </td>
                         <td className="px-6 py-4 text-sm text-gray-100">
-                          {game.player1Address === account?.toLowerCase()
-                            ? "Player One"
-                            : "Player 2"}
+                          {role}
                         </td>
                         <td className="px-6 py-4 text-sm text-gray-100">
                           {game.player1Address === account?.toLowerCase()
@@ -171,32 +216,26 @@ export default function Home() {
                           {game.status?.toUpperCase()}
                         </td>
                         <td className="px-6 py-4 text-sm text-gray-100">
-                          {formatRemainingTime(remaining)}
+                          {game.status === 'completed' ? '--' : formatRemainingTime(remaining)}
                         </td>
                         <td className="px-6 py-4 text-sm text-gray-100">
-                          {
+                          {status ? (
                             <Button
                               variant="outline"
-                              onClick={() => setShowPlayModal(true)}
+                              onClick={() =>
+                                setModal({
+                                  display: true,
+                                  game,
+                                  type: status,
+                                })
+                              }
                             >
-                              {getGameStatus(
-                                account,
-                                remaining,
-                                game.progress,
-                                game.player1Address,
-                                game.status as string
-                              )}
+                              {status}
                             </Button>
-                          }
+                          ) : (
+                            "--"
+                          )}
                         </td>
-                        {showPlayModal && (
-                          <Play
-                            balance={balance || '0'}
-                            rpgData={game}
-                            show={showPlayModal}
-                            onClose={() => setShowPlayModal(false)}
-                          />
-                        )}
                       </tr>
                     );
                   })
@@ -213,6 +252,35 @@ export default function Home() {
             </table>
           </div>
         </div>
+        {modal?.type === "solve" && modal?.game && (
+          <Solve
+            balance={balance || "0"}
+            rpgData={modal?.game}
+            show={modal.display}
+            onClose={() => setModal({ display: false, game: null, type: null })}
+            refetch={fetchGames}
+          />
+        )}
+
+        {modal?.type === "play" && modal?.game && (
+          <Play
+            balance={balance || "0"}
+            rpgData={modal?.game}
+            show={modal.display}
+            onClose={() => setModal({ display: false, game: null, type: null })}
+            refetch={fetchGames}
+          />
+        )}
+        {modal?.type === "refund" && modal?.game && (
+          <Refund
+            refetch={fetchGames}
+            balance={balance || "0"}
+            rpgData={modal?.game}
+            show={modal.display}
+            account={account}
+            onClose={() => setModal({ display: false, game: null, type: null })}
+          />
+        )}
       </main>
     </div>
   );

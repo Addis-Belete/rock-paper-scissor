@@ -39,10 +39,25 @@ export class RPGService {
     return lastAction;
   }
 
-  static async move(address: string, move: string, signer: Signer | undefined, amount: string) {
+  static async move(
+    address: string,
+    move: string,
+    signer: Signer | undefined,
+    amount: string
+  ) {
     if (!signer) throw new Error("Wallet not connected");
-    const contract = new Contract(address, rpgAbi, signer);
-    return await contract.play(move, {value: amount});
+    const contract = new Contract(address, rpgAbi, signer) as any;
+    let estimatedGas: bigint;
+    try {
+      estimatedGas = await contract.estimateGas.play(move, { value: amount });
+    } catch (err) {
+      estimatedGas = BigInt(config.defaultGasLimit);
+    }
+    const overrides = {
+      gasLimit: estimatedGas + BigInt(config.defaultGasLimit),
+      value: amount,
+    };
+    return await contract.play(move, overrides);
   }
 
   static async getHash(
@@ -56,7 +71,56 @@ export class RPGService {
     return hash;
   }
 
-  static async solve() {}
+  static async solve(
+    address: string,
+    signer: Signer | undefined,
+    move: string,
+    salt: string,
+  ) {
+    if (!signer) throw new Error("Wallet not connected");
 
-  static async callTimeOut() {}
+    const contract = new Contract(address, rpgAbi, signer) as any;
+    let estimatedGas: bigint;
+    try {
+      estimatedGas = await contract.estimateGas.solve(move, salt);
+    } catch (err) {
+      estimatedGas = BigInt(config.defaultGasLimit);
+    }
+    const overrides = {
+      gasLimit: estimatedGas + BigInt(config.defaultGasLimit),
+    };
+    return await contract.solve(move, salt, overrides);
+  }
+
+  static async callJ2TimeOut(address: string, signer: Signer | undefined) {
+    if (!signer) throw new Error("Wallet not connected");
+
+    const contract = new Contract(address, rpgAbi, signer) as any;
+    let estimatedGas: bigint;
+    try {
+      estimatedGas = await contract.estimateGas.j2Timeout();
+    } catch (err) {
+      estimatedGas = BigInt(config.defaultGasLimit);
+    }
+    const overrides = {
+      gasLimit: estimatedGas + BigInt(config.defaultGasLimit),
+    };
+    return await contract.j2Timeout(overrides);
+  }
+
+  static async callJ1TimeOut(address: string, signer: Signer | undefined) {
+    if (!signer) throw new Error("Wallet not connected");
+
+    const contract = new Contract(address, rpgAbi, signer) as any;
+    let estimatedGas: bigint;
+    try {
+      estimatedGas = await contract.estimateGas.j1Timeout();
+    } catch (err) {
+      estimatedGas = BigInt(config.defaultGasLimit);
+    }
+    const overrides = {
+      gasLimit: estimatedGas + BigInt(config.defaultGasLimit),
+    };
+    return await contract.j1Timeout(overrides);
+  }
 }

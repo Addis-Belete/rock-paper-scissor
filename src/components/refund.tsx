@@ -1,62 +1,52 @@
 import { Modal } from "@/components/ui/modal";
 import { Button } from "@/components/ui/button";
-import { Label } from "@/components/ui/label";
-import { Select, SelectItem } from "@/components/ui/select";
 import { useState } from "react";
 import { RPGService } from "@/lib/services/rpgService";
 import { walletService } from "@/lib/services/walletService";
 import { IRPG } from "@/types";
 import { formatEther } from "ethers";
-import { Alert, AlertDescription } from "@/components/ui/Alert";
 import { ErrorHandler } from "@/lib/utils/errorHandler";
+import { Alert, AlertDescription } from "@/components/ui/Alert";
 
-export function Play({
+export function Refund({
   show,
   onClose,
   rpgData,
   balance,
+  account,
   refetch,
 }: {
   show: boolean;
   onClose: () => void;
   rpgData: IRPG;
   balance: string;
+  account: string | null;
   refetch: () => Promise<void>;
 }) {
-  const [move, setMove] = useState("1");
   const [loading, setLoading] = useState(false);
-
   const [isError, setIsError] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
 
-  const playGame = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const playerOneRefund = async (rpgData: IRPG) => {
     setLoading(true);
     try {
-      await RPGService.move(
+      await RPGService.callJ2TimeOut(
         rpgData.rpgAddress,
-        move,
-        walletService.getSigner(),
-        rpgData.stakedETH.toString()
-      );
-
-      const lastAction = await RPGService.getRPGGameLastAction(
-        walletService.getSigner(),
-        rpgData.rpgAddress
+        walletService.getSigner()
       );
 
       const _rpgData: IRPG = {
         ...rpgData,
-        progress: "moved",
-        lastAction: lastAction.toString(),
+        status: "completed",
       };
-
       const res = await fetch("/api/v1/updateRpg", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ rpg: _rpgData }),
       });
+
       const data = await res.json();
+
       if (res.ok) {
         await refetch();
         onClose();
@@ -65,7 +55,44 @@ export function Play({
         setErrorMessage(data?.error);
       }
     } catch (error) {
-      console.log(error);
+      ErrorHandler.handleError(() => setIsError(true));
+      setErrorMessage("Something went wrong. Please try again!");
+      console.error(error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const playerTwoRefund = async (rpgData: IRPG) => {
+    setLoading(true);
+    try {
+      await RPGService.callJ1TimeOut(
+        rpgData.rpgAddress,
+        walletService.getSigner()
+      );
+
+      const _rpgData: IRPG = {
+        ...rpgData,
+        status: "completed",
+      };
+      const res = await fetch("/api/v1/updateRpg", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ rpg: _rpgData }),
+      });
+      const data = await res.json();
+      if (res.ok) {
+        console.log("here in refund");
+        await refetch();
+        onClose();
+      } else {
+        ErrorHandler.handleError(() => setIsError(true));
+        setErrorMessage(data?.error);
+      }
+    } catch (error) {
+      ErrorHandler.handleError(() => setIsError(true));
+      setErrorMessage("Something went wrong. Please try again!");
+      console.error(error);
     } finally {
       setLoading(false);
     }
@@ -73,42 +100,22 @@ export function Play({
 
   return (
     <Modal show={show}>
-      <form className="flex flex-col gap-4" onSubmit={(e) => playGame(e)}>
-        <div className="flex items-center justify-between">
-          <p className="text-lg font-semibold">Play Game</p>
-          <p>Available Balance: {formatEther(balance)} ETH</p>
-        </div>
-        <p>Expected Stake Amount: {formatEther(rpgData.stakedETH)} ETH</p>
-        <div className="w-full">
-          <Label htmlFor="move">Select Move</Label>
-          <Select
-            name="move"
-            value={move}
-            onChange={(e) => setMove(e.target.value)}
-          >
-            <SelectItem value="1">Rock</SelectItem>
-            <SelectItem value="2">Paper</SelectItem>
-            <SelectItem value="3">Scissor</SelectItem>
-            <SelectItem value="4">Spock</SelectItem>
-            <SelectItem value="5">Lizard</SelectItem>
-          </Select>
-        </div>
+      <div className="flex flex-col gap-4">
+        <p className="text-lg font-semibold">Refund</p>
+        <p>Your Current Balance: {formatEther(balance)} ETH</p>
 
         <Button
-          type="submit"
+          type="button"
           className="mt-2"
           disabled={loading || Number(rpgData.stakedETH) > Number(balance)}
+          onClick={() =>
+            account?.toLowerCase() === rpgData.player1Address
+              ? playerOneRefund(rpgData)
+              : playerTwoRefund(rpgData)
+          }
         >
           {loading ? "Submitting..." : "Submit"}
         </Button>
-
-        {Number(rpgData.stakedETH) > Number(balance) && (
-          <Alert>
-            <AlertDescription>
-              Insufficient balance to play the game
-            </AlertDescription>
-          </Alert>
-        )}
 
         {isError && (
           <Alert>
@@ -121,7 +128,7 @@ export function Play({
         <Button variant="outline" onClick={onClose} disabled={loading}>
           Close
         </Button>
-      </form>
+      </div>
     </Modal>
   );
 }

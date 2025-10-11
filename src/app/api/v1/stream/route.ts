@@ -3,12 +3,12 @@ import { DatabaseService } from "@/lib/services/databaseService";
 
 export async function GET(req: NextRequest) {
   const conn = await DatabaseService.connect();
-  const collection = conn.connection.collection("RPG");
+  const collection = conn.connection.collection("rpg");
 
   const stream = new ReadableStream({
     async start(controller) {
       const changeStream = collection.watch();
-
+      console.log('here in stream')
       changeStream.on("change", (change) => {
         controller.enqueue(`data: ${JSON.stringify(change)}\n\n`);
       });
@@ -30,6 +30,7 @@ export async function GET(req: NextRequest) {
       "Content-Type": "text/event-stream",
       "Cache-Control": "no-cache",
       Connection: "keep-alive",
+      "X-Accel-Buffering": "no",
     },
   });
 }
