@@ -16,7 +16,6 @@ export function formatRemainingTime(seconds: number): string {
   const mins = Math.floor((seconds % 3600) / 60);
   const secs = seconds % 60;
 
-  // Format with leading zeros if you want (e.g. 01:09:05)
   const pad = (n: number) => n.toString().padStart(2, "0");
 
   if (hrs > 0) return `${pad(hrs)}:${pad(mins)}:${pad(secs)}`;
@@ -38,8 +37,7 @@ export const getGameStatus = (
   const time = Number(timeRemaining);
 
   if (isNaN(time)) return null;
-
-  if (time >= 0 && progress === "created" && role === "player_two")
+  if (progress === "created" && role === "player_two")
     return "play";
   if (
     time === 0 &&
@@ -47,7 +45,7 @@ export const getGameStatus = (
       (progress === "moved" && role === "player_two"))
   )
     return "refund";
-  if (time === 0 && progress === "moved" && role === "player_one")
+  if (progress === "moved" && role === "player_one")
     return "solve";
   return null;
 };

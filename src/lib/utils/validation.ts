@@ -39,3 +39,18 @@ export const validateFrom = (
 
   return newErrors;
 };
+
+export const validateSolveFrom = (salt: string | undefined) => {
+  const newErrors: {
+    salt?: string;
+  } = {};
+
+  // Start block validation
+  if (!salt) {
+    newErrors.salt = "Salt is required";
+  } else if (isNaN(Number(salt))) {
+    newErrors.salt = "Salt must be a number";
+  }
+
+  return newErrors;
+};

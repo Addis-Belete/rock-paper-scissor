@@ -74,8 +74,8 @@ export class RPGService {
   static async solve(
     address: string,
     signer: Signer | undefined,
+    move: string,
     salt: string,
-    move: string
   ) {
     if (!signer) throw new Error("Wallet not connected");
 

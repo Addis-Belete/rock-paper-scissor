@@ -2,7 +2,7 @@
 
 import { Button } from "@/components/ui/button";
 import { Plus } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { PlayNewGame } from "@/components/newGameForm";
 import { IRPG } from "@/types";
 import { useContext } from "react";
@@ -17,8 +17,12 @@ import { getGameStatus } from "@/lib/utils/helpers";
 import { Play } from "@/components/play";
 import { Solve } from "@/components/solve";
 import { Refund } from "@/components/refund";
+import { useRouter, useSearchParams } from "next/navigation";
 
 export default function Home() {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+
   const [showModal, setShowModal] = useState(false);
   const [games, setGames] = useState<IRPG[]>([]);
   const [now, setNow] = useState(Date.now());
@@ -27,13 +31,23 @@ export default function Home() {
     game: null,
     display: false,
   } as { type: "play" | "solve" | "refund" | null; game: IRPG | null; display: boolean });
-  const [loading, setLoading] = useState(false);
+
+  const [tab, setTab] = useState(searchParams.get("tab") || "active");
+
+  useEffect(() => {
+    const url = `?tab=${tab}`;
+    router.push(url, { scroll: false });
+  }, [tab, router]);
+
+  const filteredGames = useMemo(
+    () => games.filter((g) => g.status === tab),
+    [games, tab]
+  );
 
   let { account, balance } = useContext(WalletContext);
 
   const fetchGames = async (): Promise<void> => {
     if (!account) return;
-
     try {
       const baseUrl =
         process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000";
@@ -62,7 +76,7 @@ export default function Home() {
     eventSource.onmessage = (event) => {
       const change = JSON.parse(event.data);
       console.log("Change received:", change);
-      fetchGames()
+      fetchGames();
     };
 
     eventSource.onerror = (err) => {
@@ -73,11 +87,11 @@ export default function Home() {
     return () => eventSource.close();
   }, []);
 
+ 
   useEffect(() => {
     if (!account) return;
     (async () => {
       await fetchGames();
-      
     })();
   }, [account]);
 
@@ -95,12 +109,15 @@ export default function Home() {
       <main className="w-full flex flex-col gap-4">
         <div className="flex flex justify-between items-center">
           <ul className="flex gap-4 items-center">
-            <li>
-              <Button variant="outline">Active</Button>
-            </li>
-            <li>
-              <Button variant="outline">Completed</Button>
-            </li>
+            {["active", "completed"].map((t, index) => {
+              return (
+                <li key={index}>
+                  <Button variant="outline" onClick={() => setTab(t)} active={tab === t}>
+                     {t.charAt(0).toUpperCase() + t.slice(1)}
+                  </Button>
+                </li>
+              );
+            })}
           </ul>
 
           <div className="">
@@ -115,7 +132,7 @@ export default function Home() {
 
             {showModal && (
               <PlayNewGame
-              account={account}
+                account={account}
                 show={showModal}
                 onClose={() => setShowModal(false)}
                 refetch={fetchGames}
@@ -157,8 +174,8 @@ export default function Home() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-800">
-                {account && games && games.length > 0 ? (
-                  games.map((game, index) => {
+                {account && filteredGames && filteredGames.length > 0 ? (
+                  filteredGames.map((game, index) => {
                     const remaining = getRemaining(
                       Number(game.lastAction) + 5 * 60
                     );
@@ -199,7 +216,7 @@ export default function Home() {
                           {game.status?.toUpperCase()}
                         </td>
                         <td className="px-6 py-4 text-sm text-gray-100">
-                          {formatRemainingTime(remaining)}
+                          {game.status === 'completed' ? '--' : formatRemainingTime(remaining)}
                         </td>
                         <td className="px-6 py-4 text-sm text-gray-100">
                           {status ? (
@@ -241,6 +258,7 @@ export default function Home() {
             rpgData={modal?.game}
             show={modal.display}
             onClose={() => setModal({ display: false, game: null, type: null })}
+            refetch={fetchGames}
           />
         )}
 
@@ -250,10 +268,12 @@ export default function Home() {
             rpgData={modal?.game}
             show={modal.display}
             onClose={() => setModal({ display: false, game: null, type: null })}
+            refetch={fetchGames}
           />
         )}
         {modal?.type === "refund" && modal?.game && (
           <Refund
+            refetch={fetchGames}
             balance={balance || "0"}
             rpgData={modal?.game}
             show={modal.display}

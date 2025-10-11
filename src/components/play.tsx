@@ -6,22 +6,28 @@ import { useState } from "react";
 import { RPGService } from "@/lib/services/rpgService";
 import { walletService } from "@/lib/services/walletService";
 import { IRPG } from "@/types";
-import { formatEther, parseUnits } from "ethers";
+import { formatEther } from "ethers";
 import { Alert, AlertDescription } from "@/components/ui/Alert";
+import { ErrorHandler } from "@/lib/utils/errorHandler";
 
 export function Play({
   show,
   onClose,
   rpgData,
   balance,
+  refetch,
 }: {
   show: boolean;
   onClose: () => void;
   rpgData: IRPG;
   balance: string;
+  refetch: () => Promise<void>;
 }) {
   const [move, setMove] = useState("1");
   const [loading, setLoading] = useState(false);
+
+  const [isError, setIsError] = useState(false);
+  const [errorMessage, setErrorMessage] = useState("");
 
   const playGame = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -50,8 +56,14 @@ export function Play({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ rpg: _rpgData }),
       });
-
-      await res.json();
+      const data = await res.json();
+      if (res.ok) {
+        await refetch();
+        onClose();
+      } else {
+        ErrorHandler.handleError(() => setIsError(true));
+        setErrorMessage(data?.error);
+      }
     } catch (error) {
       console.log(error);
     } finally {
@@ -94,6 +106,14 @@ export function Play({
           <Alert>
             <AlertDescription>
               Insufficient balance to play the game
+            </AlertDescription>
+          </Alert>
+        )}
+
+        {isError && (
+          <Alert>
+            <AlertDescription className="text-red-500">
+              {errorMessage}
             </AlertDescription>
           </Alert>
         )}

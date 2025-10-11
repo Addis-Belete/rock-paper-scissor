@@ -49,6 +49,7 @@ export function PlayNewGame({
       ...prev,
       [name]: value,
     }));
+    setErrors((prev) => ({ ...prev, [name]: undefined })); // clear error on change
   };
 
   const validate = () => {

@@ -7,17 +7,22 @@ import { RPGService } from "@/lib/services/rpgService";
 import { walletService } from "@/lib/services/walletService";
 import { IRPG } from "@/types";
 import { Input } from "@/components/ui/input";
+import { validateSolveFrom } from "@/lib/utils/validation";
+import { ErrorHandler } from "@/lib/utils/errorHandler";
+import { Alert, AlertDescription } from "@/components/ui/Alert";
 
 export function Solve({
   show,
   onClose,
   rpgData,
   balance,
+  refetch,
 }: {
   show: boolean;
   onClose: () => void;
   rpgData: IRPG;
   balance: string;
+  refetch: () => Promise<void>;
 }) {
   const [formData, setFormData] = useState({
     move: "1",
@@ -25,15 +30,28 @@ export function Solve({
   });
   const [loading, setLoading] = useState(false);
 
+  const [errors, setErrors] = useState<{
+    salt?: string;
+  }>({});
+  const [errorMessage, setErrorMessage] = useState("");
+  const [isError, setIsError] = useState(false);
+
+  const validate = () => {
+    const newErrors = validateSolveFrom(formData.salt);
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
   const solveGame = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!validate()) return;
     setLoading(true);
     try {
       await RPGService.solve(
         rpgData.rpgAddress,
         walletService.getSigner(),
         formData.move,
-        "12"
+        formData.salt
       );
 
       const lastAction = await RPGService.getRPGGameLastAction(
@@ -54,8 +72,17 @@ export function Solve({
         body: JSON.stringify({ rpg: _rpgData }),
       });
 
-      await res.json();
+      const data = await res.json();
+      if (res.ok) {
+        await refetch();
+        onClose();
+      } else {
+        ErrorHandler.handleError(() => setIsError(true));
+        setErrorMessage(data?.error);
+      }
     } catch (error) {
+      ErrorHandler.handleError(() => setIsError(true));
+      setErrorMessage("Something went wrong. Please try again!");
       console.log(error);
     } finally {
       setLoading(false);
@@ -106,6 +133,7 @@ export function Solve({
             placeholder="Enter slat"
             onChange={(e) => handleChange(e)}
           />
+          {errors.salt && <p className="text-red-600">{errors.salt}</p>}
         </div>
 
         <Button
@@ -115,6 +143,14 @@ export function Solve({
         >
           {loading ? "Submitting..." : "Submit"}
         </Button>
+
+        {isError && (
+          <Alert>
+            <AlertDescription className="text-red-500">
+              {errorMessage}
+            </AlertDescription>
+          </Alert>
+        )}
 
         <Button variant="outline" onClick={onClose} disabled={loading}>
           Close

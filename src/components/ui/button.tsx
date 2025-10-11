@@ -7,7 +7,8 @@ type ButtonProps = {
   className?: string;
   variant?: "default" | "outline";
   size?: "sm" | "md" | "lg";
-  type?: "button" | "submit" | "reset" | undefined;
+  type?: "button" | "submit" | "reset";
+  active?: boolean;
 };
 
 export function Button({
@@ -18,13 +19,19 @@ export function Button({
   className = "",
   variant = "default",
   size = "md",
+  active = false,
 }: ButtonProps) {
-  const baseStyles = "rounded text-sm transition-colors disabled:opacity-50";
+  const baseStyles =
+    "rounded text-sm font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed";
 
   const variantStyles =
     variant === "default"
-      ? "bg-blue-500 text-white hover:bg-blue-600"
-      : "border border-gray-400 text-gray-200 hover:bg-gray-100";
+      ? active
+        ? "bg-blue-700 text-white" // active style for default variant
+        : "bg-blue-500 text-white hover:bg-blue-600"
+      : active
+      ? "border border-blue-400 text-blue-300 bg-gray-800"
+      : "border border-gray-500 text-gray-200 hover:bg-gray-700";
 
   const sizeStyles =
     size === "sm"

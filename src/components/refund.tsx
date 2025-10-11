@@ -5,6 +5,8 @@ import { RPGService } from "@/lib/services/rpgService";
 import { walletService } from "@/lib/services/walletService";
 import { IRPG } from "@/types";
 import { formatEther } from "ethers";
+import { ErrorHandler } from "@/lib/utils/errorHandler";
+import { Alert, AlertDescription } from "@/components/ui/Alert";
 
 export function Refund({
   show,
@@ -12,14 +14,18 @@ export function Refund({
   rpgData,
   balance,
   account,
+  refetch,
 }: {
   show: boolean;
   onClose: () => void;
   rpgData: IRPG;
   balance: string;
   account: string | null;
+  refetch: () => Promise<void>;
 }) {
   const [loading, setLoading] = useState(false);
+  const [isError, setIsError] = useState(false);
+  const [errorMessage, setErrorMessage] = useState("");
 
   const playerOneRefund = async (rpgData: IRPG) => {
     setLoading(true);
@@ -31,14 +37,26 @@ export function Refund({
 
       const _rpgData: IRPG = {
         ...rpgData,
-        status: "completed"
+        status: "completed",
       };
       const res = await fetch("/api/v1/updateRpg", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ rpg: _rpgData }),
       });
+
+      const data = await res.json();
+
+      if (res.ok) {
+        await refetch();
+        onClose();
+      } else {
+        ErrorHandler.handleError(() => setIsError(true));
+        setErrorMessage(data?.error);
+      }
     } catch (error) {
+      ErrorHandler.handleError(() => setIsError(true));
+      setErrorMessage("Something went wrong. Please try again!");
       console.error(error);
     } finally {
       setLoading(false);
@@ -48,21 +66,32 @@ export function Refund({
   const playerTwoRefund = async (rpgData: IRPG) => {
     setLoading(true);
     try {
-      await RPGService.callJ2TimeOut(
+      await RPGService.callJ1TimeOut(
         rpgData.rpgAddress,
         walletService.getSigner()
       );
 
       const _rpgData: IRPG = {
         ...rpgData,
-        status: "completed"
+        status: "completed",
       };
-       await fetch("/api/v1/updateRpg", {
+      const res = await fetch("/api/v1/updateRpg", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ rpg: _rpgData }),
       });
+      const data = await res.json();
+      if (res.ok) {
+        console.log("here in refund");
+        await refetch();
+        onClose();
+      } else {
+        ErrorHandler.handleError(() => setIsError(true));
+        setErrorMessage(data?.error);
+      }
     } catch (error) {
+      ErrorHandler.handleError(() => setIsError(true));
+      setErrorMessage("Something went wrong. Please try again!");
       console.error(error);
     } finally {
       setLoading(false);
@@ -87,6 +116,14 @@ export function Refund({
         >
           {loading ? "Submitting..." : "Submit"}
         </Button>
+
+        {isError && (
+          <Alert>
+            <AlertDescription className="text-red-500">
+              {errorMessage}
+            </AlertDescription>
+          </Alert>
+        )}
 
         <Button variant="outline" onClick={onClose} disabled={loading}>
           Close
