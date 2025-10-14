@@ -3,11 +3,14 @@
 import { ethers } from "ethers";
 import { Signer, BrowserProvider } from "ethers";
 
+const SIGN_MESSAGE =
+  "RPG Game: Sign once to securely encrypt and decrypt your moves and salt securly for this session.";
+
 class WalletService {
   private static instance: WalletService;
   private provider?: BrowserProvider;
   private signer?: Signer;
-  account?: string
+  account?: string;
 
   private constructor() {
     if (typeof window !== "undefined" && window.ethereum) {
@@ -33,18 +36,18 @@ class WalletService {
 
     await window.ethereum.request({ method: "eth_requestAccounts" });
     this.signer = await this.provider.getSigner();
-    this.account = await this.signer.getAddress()
+    this.account = await this.signer.getAddress();
   }
 
   async disconnect() {
     this.signer = undefined;
-    this.account = undefined
+    this.account = undefined;
   }
 
   // Get balance
   async getBalance(address: string | undefined): Promise<string> {
     if (!this.provider) throw new Error("Provider not initialized.");
-    if(!address) return '0'
+    if (!address) return "0";
     const balance = await this.provider.getBalance(address);
     return balance.toString();
   }
@@ -88,7 +91,16 @@ class WalletService {
     return this.signer;
   }
 
+  async signMessage(): Promise<string> {
+    if (!this.signer) throw new Error("Signer not initialized.");
+    const signature = await this.signer.signMessage(SIGN_MESSAGE);
+    sessionStorage.setItem("rpgGameSingature", signature);
+    return signature
+  }
 
+  getSignature(): string | null {
+    return sessionStorage.getItem("rpgGameSingature");
+  }
 }
 
 export const walletService = WalletService.getInstance();

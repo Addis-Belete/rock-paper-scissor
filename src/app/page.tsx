@@ -3,13 +3,14 @@
 import { Button } from "@/components/ui/button";
 import { Plus } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
-import { PlayNewGame } from "@/components/newGameForm";
+import { PlayNewGame } from "@/components/playNewGame";
 import { IRPG } from "@/types";
 import { useContext } from "react";
 import { WalletContext } from "@/lib/utils/walletContext";
 import {
   formatDate,
   formatRemainingTime,
+  getPlayerGameResult,
   shortenAddress,
 } from "@/lib/utils/helpers";
 import { formatEther } from "ethers";
@@ -44,7 +45,7 @@ export default function Home() {
     [games, tab]
   );
 
-  let { account, balance } = useContext(WalletContext);
+  const { account, balance } = useContext(WalletContext);
 
   const fetchGames = async (): Promise<void> => {
     if (!account) return;
@@ -176,7 +177,6 @@ export default function Home() {
                 account={account}
                 show={showModal}
                 onClose={() => setShowModal(false)}
-                refetch={fetchGames}
               />
             )}
           </div>
@@ -203,6 +203,10 @@ export default function Home() {
                   </th>
                   <th className="px-4 py-3 text-left font-semibold text-gray-300">
                     Status
+                  </th>
+
+                  <th className="px-4 py-3 text-left font-semibold text-gray-300">
+                    Result
                   </th>
 
                   <th className="px-4 py-3 text-left font-semibold text-gray-300">
@@ -255,6 +259,11 @@ export default function Home() {
                         </td>
                         <td className="px-6 py-4 text-sm text-gray-100">
                           {game.status?.toUpperCase()}
+                        </td>
+                        <td className="px-6 py-4 text-sm text-gray-100">
+                          {game?.result
+                            ? getPlayerGameResult(role, game.result)?.toUpperCase()
+                            : "--"}
                         </td>
                         <td className="px-6 py-4 text-sm text-gray-100">
                           {game.status === "completed"

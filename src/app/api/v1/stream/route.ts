@@ -1,6 +1,5 @@
 import { NextRequest } from "next/server";
 import { DatabaseService } from "@/lib/services/databaseService";
-import { RPG } from "@/lib/models/rpg.model";
 
 export async function GET(req: NextRequest) {
   const conn = await DatabaseService.connect();

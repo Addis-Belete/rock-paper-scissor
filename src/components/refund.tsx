@@ -37,6 +37,7 @@ export function Refund({
       const _rpgData: IRPG = {
         ...rpgData,
         status: "completed",
+        result: 'refunded' // player two timeout, player1 refunded
       };
       const res = await fetch("/api/v1/updateRpg", {
         method: "POST",
@@ -72,6 +73,7 @@ export function Refund({
       const _rpgData: IRPG = {
         ...rpgData,
         status: "completed",
+        result: 'timeout' // player1 timeout, player2 refunded
       };
       const res = await fetch("/api/v1/updateRpg", {
         method: "POST",
@@ -110,7 +112,7 @@ export function Refund({
               : playerTwoRefund(rpgData)
           }
         >
-          {loading ? "Submitting..." : "Submit"}
+          {loading ? "Refunding..." : "Refund"}
         </Button>
 
         {isError && (

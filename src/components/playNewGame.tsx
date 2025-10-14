@@ -11,17 +11,16 @@ import { parseEther } from "ethers";
 import { validateFrom } from "@/lib/utils/validation";
 import { Alert, AlertDescription } from "@/components/ui/Alert";
 import { ErrorHandler } from "@/lib/utils/errorHandler";
+import { PayloadEncryptionService } from "@/lib/services/payloadEncryptionService";
 
 export function PlayNewGame({
   account,
   show,
   onClose,
-  refetch,
 }: {
   show: boolean;
   onClose: () => void;
   account: string | null;
-  refetch: () => Promise<void>;
 }) {
   const [formData, setFormData] = useState({
     move: "1",
@@ -61,7 +60,9 @@ export function PlayNewGame({
   const playNewGame = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!validate()) return;
+
     setLoading(true);
+
     try {
       const rpgAddress = await RPGService.playNewRPGGame(
         walletService.getSigner(),
@@ -76,15 +77,32 @@ export function PlayNewGame({
         rpgAddress as string
       );
 
+      let signature =
+        walletService.getSignature() ||
+        sessionStorage.getItem("rpgGameSignature");
+
+      if (!signature) {
+        signature = await walletService.signMessage();
+        sessionStorage.setItem("rpgGameSignature", signature);
+      }
+
+      const encryptedCommit = await PayloadEncryptionService.encryptPayload(
+        { salt: formData.salt, move: formData.move },
+        signature
+      );
+
       const rpgData: IRPG = {
         rpgAddress: rpgAddress as string,
         player1Address: walletService.account?.toLowerCase() || "",
         player2Address: formData.player2.toLowerCase(),
-        stakedETH: Number(parseEther(formData.stakeAmount)), // save in wei
+        stakedETH: Number(parseEther(formData.stakeAmount)),
         createdAt: lastAction.toString(),
         lastAction: lastAction.toString(),
         status: "active",
         progress: "created",
+        encryptedData: encryptedCommit,
+        result: null,
+        player2Move: null,
       };
 
       const res = await fetch("/api/v1/saveRpg", {
@@ -94,20 +112,22 @@ export function PlayNewGame({
       });
 
       const data = await res.json();
+
       if (res.ok) {
         onClose();
       } else {
         ErrorHandler.handleError(() => setIsError(true));
-        setErrorMessage(data?.error);
+        setErrorMessage(data?.error || "Failed to save game.");
       }
     } catch (error) {
+      console.error("playNewGame error:", error);
       ErrorHandler.handleError(() => setIsError(true));
-      setErrorMessage("Something went wrong. Please try again!");
-      console.log(error);
+      setErrorMessage("Game creation failed. Please retry your transaction.");
     } finally {
       setLoading(false);
     }
   };
+
   return (
     <Modal show={show}>
       <form className="flex flex-col gap-4 " onSubmit={(e) => playNewGame(e)}>

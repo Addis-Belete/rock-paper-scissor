@@ -49,6 +49,7 @@ export function Play({
         ...rpgData,
         progress: "moved",
         lastAction: lastAction.toString(),
+        player2Move: move
       };
 
       const res = await fetch("/api/v1/updateRpg", {
@@ -98,7 +99,7 @@ export function Play({
           className="mt-2"
           disabled={loading || Number(rpgData.stakedETH) > Number(balance)}
         >
-          {loading ? "Submitting..." : "Submit"}
+          {loading ? "Playing..." : "Play"}
         </Button>
 
         {Number(rpgData.stakedETH) > Number(balance) && (
