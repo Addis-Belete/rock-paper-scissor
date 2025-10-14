@@ -2,7 +2,7 @@
 import { Gamepad2 } from "lucide-react";
 import { Badge } from "./ui/badge";
 import { walletService } from "@/lib/services/walletService";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Button } from "./ui/button";
 import { shortenAddress } from "@/lib/utils/helpers";
 import { WalletContext } from "@/lib/utils/walletContext";
@@ -11,10 +11,20 @@ export function Header({ children }: { children: React.ReactNode }) {
   const [account, setAccount] = useState<string | null>(null);
   const [balance, setBalance] = useState<string | null>(null);
 
+  // reconnect
+  useEffect(() => {
+    (async () => {
+      if (localStorage.getItem("rpgWalletConnected") === "true") {
+        await connectWallet();
+      }
+    })();
+  }, []);
+
   const connectWallet = async () => {
     try {
       await walletService.connect();
       const balance = await walletService.getBalance(walletService.account);
+      localStorage.setItem("rpgWalletConnected", "true");
       setAccount(walletService.account || null);
       setBalance(balance);
     } catch (error) {
@@ -25,6 +35,7 @@ export function Header({ children }: { children: React.ReactNode }) {
 
   const disconnect = async () => {
     walletService.disconnect();
+    localStorage.removeItem("rpgWalletConnected");
     setAccount(null);
     setBalance(null);
   };

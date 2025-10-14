@@ -13,15 +13,13 @@ export function Refund({
   onClose,
   rpgData,
   balance,
-  account,
-  refetch,
+  account
 }: {
   show: boolean;
   onClose: () => void;
   rpgData: IRPG;
   balance: string;
   account: string | null;
-  refetch: () => Promise<void>;
 }) {
   const [loading, setLoading] = useState(false);
   const [isError, setIsError] = useState(false);
@@ -30,14 +28,16 @@ export function Refund({
   const playerOneRefund = async (rpgData: IRPG) => {
     setLoading(true);
     try {
-      await RPGService.callJ2TimeOut(
+     const tx = await RPGService.callJ2TimeOut(
         rpgData.rpgAddress,
         walletService.getSigner()
       );
 
+      await tx.wait();
       const _rpgData: IRPG = {
         ...rpgData,
         status: "completed",
+        result: 'refunded' // player two timeout, player1 refunded
       };
       const res = await fetch("/api/v1/updateRpg", {
         method: "POST",
@@ -48,7 +48,6 @@ export function Refund({
       const data = await res.json();
 
       if (res.ok) {
-        await refetch();
         onClose();
       } else {
         ErrorHandler.handleError(() => setIsError(true));
@@ -74,6 +73,7 @@ export function Refund({
       const _rpgData: IRPG = {
         ...rpgData,
         status: "completed",
+        result: 'timeout' // player1 timeout, player2 refunded
       };
       const res = await fetch("/api/v1/updateRpg", {
         method: "POST",
@@ -82,8 +82,6 @@ export function Refund({
       });
       const data = await res.json();
       if (res.ok) {
-        console.log("here in refund");
-        await refetch();
         onClose();
       } else {
         ErrorHandler.handleError(() => setIsError(true));
@@ -114,7 +112,7 @@ export function Refund({
               : playerTwoRefund(rpgData)
           }
         >
-          {loading ? "Submitting..." : "Submit"}
+          {loading ? "Refunding..." : "Refund"}
         </Button>
 
         {isError && (

@@ -1,3 +1,5 @@
+import { GameResult } from "@/types";
+
 export function shortenAddress(addr: string, chars = 6) {
   return `${addr.slice(0, chars)}...${addr.slice(-chars)}`;
 }
@@ -37,15 +39,44 @@ export const getGameStatus = (
   const time = Number(timeRemaining);
 
   if (isNaN(time)) return null;
-  if (progress === "created" && role === "player_two")
-    return "play";
+  if (progress === "created" && role === "player_two") return "play";
   if (
     time === 0 &&
     ((progress === "created" && role === "player_one") ||
       (progress === "moved" && role === "player_two"))
   )
     return "refund";
-  if (progress === "moved" && role === "player_one")
-    return "solve";
+  if (progress === "moved" && role === "player_one") return "solve";
   return null;
+};
+
+export const getWinStatus = (
+  player1Move: string,
+  player2Move: string | null
+): Partial<GameResult> | null => {
+  if (!player2Move) return null;
+  if (Number(player1Move) > Number(player2Move)) return "win";
+
+  if (Number(player1Move) < Number(player2Move)) return "loss";
+
+  return "draw";
+};
+
+export const getPlayerGameResult = (
+  role: "Player One" | "Player Two",
+  result: GameResult
+): GameResult => {
+  if (role === "Player One") return result;
+  switch (result) {
+    case "win":
+      return "loss";
+    case "loss":
+      return "win";
+    case "timeout":
+      return "refunded";
+    case "refunded":
+      return "timeout";
+    default:
+      return result;
+  }
 };

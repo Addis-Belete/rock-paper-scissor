@@ -1,69 +1,62 @@
 import { Modal } from "@/components/ui/modal";
 import { Button } from "@/components/ui/button";
-import { Label } from "@/components/ui/label";
-import { Select, SelectItem } from "@/components/ui/select";
 import { useState } from "react";
 import { RPGService } from "@/lib/services/rpgService";
 import { walletService } from "@/lib/services/walletService";
-import { IRPG } from "@/types";
-import { Input } from "@/components/ui/input";
-import { validateSolveFrom } from "@/lib/utils/validation";
+import { GameResult, IRPG } from "@/types";
 import { ErrorHandler } from "@/lib/utils/errorHandler";
 import { Alert, AlertDescription } from "@/components/ui/Alert";
+import { PayloadEncryptionService } from "@/lib/services/payloadEncryptionService";
+import { getWinStatus } from "@/lib/utils/helpers";
+import { formatEther } from "ethers";
 
 export function Solve({
   show,
   onClose,
   rpgData,
   balance,
-  refetch,
 }: {
   show: boolean;
   onClose: () => void;
   rpgData: IRPG;
   balance: string;
-  refetch: () => Promise<void>;
 }) {
-  const [formData, setFormData] = useState({
-    move: "1",
-    salt: "",
-  });
   const [loading, setLoading] = useState(false);
-
-  const [errors, setErrors] = useState<{
-    salt?: string;
-  }>({});
   const [errorMessage, setErrorMessage] = useState("");
   const [isError, setIsError] = useState(false);
 
-  const validate = () => {
-    const newErrors = validateSolveFrom(formData.salt);
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
-  };
-
-  const solveGame = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!validate()) return;
+  const solveGame = async () => {
     setLoading(true);
+    let signature = walletService.getSignature();
+
+    if (!signature) {
+      signature = await walletService.signMessage();
+    }
+    const payload = await PayloadEncryptionService.decryptPayload(
+      rpgData.encryptedData,
+      signature
+    );
+
     try {
-      await RPGService.solve(
+      const tx = await RPGService.solve(
         rpgData.rpgAddress,
         walletService.getSigner(),
-        formData.move,
-        formData.salt
+        payload.move,
+        payload.salt
       );
-
+      await tx.wait();
       const lastAction = await RPGService.getRPGGameLastAction(
         walletService.getSigner(),
         rpgData.rpgAddress
       );
 
+      const gameResult = getWinStatus(payload.move, rpgData.player2Move);
       const _rpgData: IRPG = {
         ...rpgData,
         progress: "solved",
         status: "completed",
-        lastAction: lastAction.toString(), // add completed status
+        lastAction: lastAction.toString(),
+        result: gameResult as GameResult,
       };
 
       const res = await fetch("/api/v1/updateRpg", {
@@ -74,7 +67,6 @@ export function Solve({
 
       const data = await res.json();
       if (res.ok) {
-        await refetch();
         onClose();
       } else {
         ErrorHandler.handleError(() => setIsError(true));
@@ -82,66 +74,28 @@ export function Solve({
       }
     } catch (error) {
       ErrorHandler.handleError(() => setIsError(true));
-      setErrorMessage("Something went wrong. Please try again!");
+      setErrorMessage(
+        "Transaction failed!. move and salt must match the original."
+      );
       console.log(error);
     } finally {
       setLoading(false);
     }
   };
 
-  const handleChange = (
-    e:
-      | React.ChangeEvent<HTMLInputElement>
-      | React.ChangeEvent<HTMLSelectElement>
-  ) => {
-    const { name, value } = e.target;
-    setFormData((prev) => ({
-      ...prev,
-      [name]: value,
-    }));
-  };
-
   return (
     <Modal show={show}>
-      <form className="flex flex-col gap-4" onSubmit={(e) => solveGame(e)}>
-        <div className="flex items-center justify-between">
-          <p className="text-lg font-semibold">Solve Game</p>
-        </div>
-        <p className="text-yellow-500">
-          {" "}
-          Note: Please enter the move and salt you used when creating the game.
-        </p>
-        <div className="w-full">
-          <Label htmlFor="move">Select Move</Label>
-          <Select
-            name="move"
-            value={formData.move}
-            onChange={(e) => handleChange(e)}
-          >
-            <SelectItem value="1">Rock</SelectItem>
-            <SelectItem value="2">Paper</SelectItem>
-            <SelectItem value="3">Scissor</SelectItem>
-            <SelectItem value="4">Spock</SelectItem>
-            <SelectItem value="5">Lizard</SelectItem>
-          </Select>
-        </div>
-
-        <div>
-          <Label htmlFor="salt">Enter Salt</Label>
-          <Input
-            name="salt"
-            placeholder="Enter slat"
-            onChange={(e) => handleChange(e)}
-          />
-          {errors.salt && <p className="text-red-600">{errors.salt}</p>}
-        </div>
+      <div className="flex flex-col gap-4">
+        <p className="text-lg font-semibold">Solve Game</p>
+        <p>Your Current Balance: {formatEther(balance)} ETH</p>
 
         <Button
-          type="submit"
+          type="button"
           className="mt-2"
-          disabled={loading || Number(rpgData.stakedETH) > Number(balance)}
+          onClick={() => solveGame()}
+          disabled={loading}
         >
-          {loading ? "Submitting..." : "Submit"}
+          {loading ? "Solving..." : "Solve"}
         </Button>
 
         {isError && (
@@ -155,7 +109,7 @@ export function Solve({
         <Button variant="outline" onClick={onClose} disabled={loading}>
           Close
         </Button>
-      </form>
+      </div>
     </Modal>
   );
 }

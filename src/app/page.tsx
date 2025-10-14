@@ -2,14 +2,15 @@
 
 import { Button } from "@/components/ui/button";
 import { Plus } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
-import { PlayNewGame } from "@/components/newGameForm";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { PlayNewGame } from "@/components/playNewGame";
 import { IRPG } from "@/types";
 import { useContext } from "react";
 import { WalletContext } from "@/lib/utils/walletContext";
 import {
   formatDate,
   formatRemainingTime,
+  getPlayerGameResult,
   shortenAddress,
 } from "@/lib/utils/helpers";
 import { formatEther } from "ethers";
@@ -44,9 +45,9 @@ export default function Home() {
     [games, tab]
   );
 
-  let { account, balance } = useContext(WalletContext);
+  const { account, balance } = useContext(WalletContext);
 
-  const fetchGames = async (): Promise<void> => {
+  const fetchGames = useCallback(async (): Promise<void> => {
     if (!account) return;
     try {
       const baseUrl =
@@ -68,32 +69,69 @@ export default function Home() {
     } catch (error) {
       console.error("Error fetching games:", error);
     }
-  };
+  }, [account]);
 
   useEffect(() => {
+    if (!account) return;
+
     const eventSource = new EventSource("/api/v1/stream");
 
+    eventSource.onopen = () => {
+      console.log("Connected to SSE stream");
+    };
+
     eventSource.onmessage = (event) => {
-      const change = JSON.parse(event.data);
-      console.log("Change received:", change);
-      fetchGames();
+      try {
+        const change = JSON.parse(event.data);
+        setGames((prev) => {
+          if (change.operationType === "insert") {
+            if (
+              change.fullDocument.player2Address === account.toLowerCase() ||
+              change.fullDocument.player1Address === account.toLowerCase()
+            ) {
+              // avoid duplicates
+              const exists = prev.some(
+                (g) => g._id === change.fullDocument._id
+              );
+              if (!exists) {
+                return [...prev, change.fullDocument];
+              }
+            }
+          } else if (
+            change.operationType === "update" ||
+            change.operationType === "replace"
+          ) {
+            return prev.map((g) =>
+              g._id === change.documentKey._id
+                ? { ...g, ...change.updateDescription?.updatedFields }
+                : g
+            );
+          } else if (change.operationType === "delete") {
+            return prev.filter((g) => g._id !== change.documentKey._id);
+          }
+          return prev;
+        });
+      } catch (err) {
+        console.error("Failed to parse SSE event:", err);
+      }
     };
 
     eventSource.onerror = (err) => {
       console.error("SSE error:", err);
-      eventSource.close();
     };
 
-    return () => eventSource.close();
-  }, []);
+    return () => {
+      console.log("Closing SSE connection");
+      eventSource.close();
+    };
+  }, [account]); // ✅ only depends on account
 
- 
   useEffect(() => {
     if (!account) return;
     (async () => {
       await fetchGames();
     })();
-  }, [account]);
+  }, [account, fetchGames]);
 
   useEffect(() => {
     const timer = setInterval(() => setNow(Date.now()), 1000);
@@ -112,8 +150,12 @@ export default function Home() {
             {["active", "completed"].map((t, index) => {
               return (
                 <li key={index}>
-                  <Button variant="outline" onClick={() => setTab(t)} active={tab === t}>
-                     {t.charAt(0).toUpperCase() + t.slice(1)}
+                  <Button
+                    variant="outline"
+                    onClick={() => setTab(t)}
+                    active={tab === t}
+                  >
+                    {t.charAt(0).toUpperCase() + t.slice(1)}
                   </Button>
                 </li>
               );
@@ -135,7 +177,6 @@ export default function Home() {
                 account={account}
                 show={showModal}
                 onClose={() => setShowModal(false)}
-                refetch={fetchGames}
               />
             )}
           </div>
@@ -155,13 +196,17 @@ export default function Home() {
                     Role
                   </th>
                   <th className="px-4 py-3 text-left font-semibold text-gray-300">
-                    Address
+                    Opponent Address
                   </th>
                   <th className="px-4 py-3 text-left font-semibold text-gray-300">
                     Staked ETH
                   </th>
                   <th className="px-4 py-3 text-left font-semibold text-gray-300">
                     Status
+                  </th>
+
+                  <th className="px-4 py-3 text-left font-semibold text-gray-300">
+                    Result
                   </th>
 
                   <th className="px-4 py-3 text-left font-semibold text-gray-300">
@@ -216,7 +261,14 @@ export default function Home() {
                           {game.status?.toUpperCase()}
                         </td>
                         <td className="px-6 py-4 text-sm text-gray-100">
-                          {game.status === 'completed' ? '--' : formatRemainingTime(remaining)}
+                          {game?.result
+                            ? getPlayerGameResult(role, game.result)?.toUpperCase()
+                            : "--"}
+                        </td>
+                        <td className="px-6 py-4 text-sm text-gray-100">
+                          {game.status === "completed"
+                            ? "--"
+                            : formatRemainingTime(remaining)}
                         </td>
                         <td className="px-6 py-4 text-sm text-gray-100">
                           {status ? (
@@ -258,7 +310,6 @@ export default function Home() {
             rpgData={modal?.game}
             show={modal.display}
             onClose={() => setModal({ display: false, game: null, type: null })}
-            refetch={fetchGames}
           />
         )}
 
@@ -268,12 +319,10 @@ export default function Home() {
             rpgData={modal?.game}
             show={modal.display}
             onClose={() => setModal({ display: false, game: null, type: null })}
-            refetch={fetchGames}
           />
         )}
         {modal?.type === "refund" && modal?.game && (
           <Refund
-            refetch={fetchGames}
             balance={balance || "0"}
             rpgData={modal?.game}
             show={modal.display}

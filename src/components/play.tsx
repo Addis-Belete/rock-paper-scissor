@@ -15,13 +15,11 @@ export function Play({
   onClose,
   rpgData,
   balance,
-  refetch,
 }: {
   show: boolean;
   onClose: () => void;
   rpgData: IRPG;
   balance: string;
-  refetch: () => Promise<void>;
 }) {
   const [move, setMove] = useState("1");
   const [loading, setLoading] = useState(false);
@@ -33,12 +31,14 @@ export function Play({
     e.preventDefault();
     setLoading(true);
     try {
-      await RPGService.move(
+      const tx = await RPGService.move(
         rpgData.rpgAddress,
         move,
         walletService.getSigner(),
         rpgData.stakedETH.toString()
       );
+
+      await tx.wait();
 
       const lastAction = await RPGService.getRPGGameLastAction(
         walletService.getSigner(),
@@ -49,6 +49,7 @@ export function Play({
         ...rpgData,
         progress: "moved",
         lastAction: lastAction.toString(),
+        player2Move: move
       };
 
       const res = await fetch("/api/v1/updateRpg", {
@@ -58,7 +59,6 @@ export function Play({
       });
       const data = await res.json();
       if (res.ok) {
-        await refetch();
         onClose();
       } else {
         ErrorHandler.handleError(() => setIsError(true));
@@ -99,7 +99,7 @@ export function Play({
           className="mt-2"
           disabled={loading || Number(rpgData.stakedETH) > Number(balance)}
         >
-          {loading ? "Submitting..." : "Submit"}
+          {loading ? "Playing..." : "Play"}
         </Button>
 
         {Number(rpgData.stakedETH) > Number(balance) && (
