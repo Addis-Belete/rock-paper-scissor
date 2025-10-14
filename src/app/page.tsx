@@ -2,7 +2,7 @@
 
 import { Button } from "@/components/ui/button";
 import { Plus } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { PlayNewGame } from "@/components/playNewGame";
 import { IRPG } from "@/types";
 import { useContext } from "react";
@@ -47,7 +47,7 @@ export default function Home() {
 
   const { account, balance } = useContext(WalletContext);
 
-  const fetchGames = async (): Promise<void> => {
+  const fetchGames = useCallback(async (): Promise<void> => {
     if (!account) return;
     try {
       const baseUrl =
@@ -69,7 +69,7 @@ export default function Home() {
     } catch (error) {
       console.error("Error fetching games:", error);
     }
-  };
+  }, [account]);
 
   useEffect(() => {
     if (!account) return;
@@ -131,7 +131,7 @@ export default function Home() {
     (async () => {
       await fetchGames();
     })();
-  }, [account]);
+  }, [account, fetchGames]);
 
   useEffect(() => {
     const timer = setInterval(() => setNow(Date.now()), 1000);

@@ -62,6 +62,7 @@ class WalletService {
         params: [{ chainId: sepoliaChainId }],
       });
       console.log("Switched to Sepolia network");
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (error: any) {
       // If Sepolia is not added to MetaMask
       if (error.code === 4902) {

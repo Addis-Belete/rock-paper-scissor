@@ -3,10 +3,12 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev --turbopack",
-    "build": "next build --turbopack",
+    "dev": "npm run typegen && next dev --turbopack",
+    "build": "npm run typegen && next build --turbopack",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "typegen": "npx typechain --target ethers-v6 --out-dir typechain 'src/lib/abi/*.json'"
+  
   },
   "dependencies": {
     "ethers": "^6.15.0",
@@ -19,12 +21,14 @@
   "devDependencies": {
     "@eslint/eslintrc": "^3",
     "@tailwindcss/postcss": "^4",
+    "@typechain/ethers-v6": "^0.5.1",
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "eslint": "^9",
     "eslint-config-next": "15.5.4",
     "tailwindcss": "^4",
+    "typechain": "^8.3.2",
     "typescript": "^5"
   }
 }

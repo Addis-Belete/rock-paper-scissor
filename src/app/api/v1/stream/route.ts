@@ -28,9 +28,9 @@ export async function GET(req: NextRequest) {
           changeStream.close();
           controller.close();
         });
-      } catch (err: any) {
+      } catch (err) {
         console.error("SSE initialization error:", err);
-        controller.enqueue(`event: error\ndata: ${err.message}\n\n`);
+        controller.enqueue(`event: error\ndata: ${err}\n\n`);
         controller.close();
       }
     },
