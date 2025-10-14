@@ -57,7 +57,7 @@ export const getWinStatus = (
   if (!player2Move) return null;
   if (Number(player1Move) > Number(player2Move)) return "win";
 
-  if (Number(player1Move) > Number(player2Move)) return "loss";
+  if (Number(player1Move) < Number(player2Move)) return "loss";
 
   return "draw";
 };

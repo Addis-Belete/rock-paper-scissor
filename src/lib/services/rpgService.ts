@@ -45,12 +45,11 @@ export class RPGService {
     amount: string
   ) {
     if (!signer) throw new Error("Wallet not connected");
-    const contract = Rpg__factory.connect(address, signer); ;
+    const contract = Rpg__factory.connect(address, signer);
     let estimatedGas: bigint;
     try {
-      estimatedGas = await contract.getFunction('play').estimateGas(move)
+      estimatedGas = await contract.getFunction("play").estimateGas(move);
     } catch {
-     
       estimatedGas = BigInt(config.defaultGasLimit);
     }
     const overrides = {
@@ -75,15 +74,17 @@ export class RPGService {
     address: string,
     signer: Signer | undefined,
     move: string,
-    salt: string,
+    salt: string
   ) {
     if (!signer) throw new Error("Wallet not connected");
 
     const contract = Rpg__factory.connect(address, signer);
     let estimatedGas: bigint;
     try {
-      estimatedGas = await contract.getFunction('solve').estimateGas(move, salt);
-    } catch  {
+      estimatedGas = await contract
+        .getFunction("solve")
+        .estimateGas(move, salt);
+    } catch {
       estimatedGas = BigInt(config.defaultGasLimit);
     }
     const overrides = {
@@ -98,7 +99,7 @@ export class RPGService {
     const contract = Rpg__factory.connect(address, signer);
     let estimatedGas: bigint;
     try {
-      estimatedGas = await contract.getFunction('j2Timeout').estimateGas();
+      estimatedGas = await contract.getFunction("j2Timeout").estimateGas();
     } catch {
       estimatedGas = BigInt(config.defaultGasLimit);
     }
