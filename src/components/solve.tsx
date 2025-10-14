@@ -16,13 +16,11 @@ export function Solve({
   onClose,
   rpgData,
   balance,
-  refetch,
 }: {
   show: boolean;
   onClose: () => void;
   rpgData: IRPG;
   balance: string;
-  refetch: () => Promise<void>;
 }) {
   const [formData, setFormData] = useState({
     move: "1",
@@ -47,13 +45,13 @@ export function Solve({
     if (!validate()) return;
     setLoading(true);
     try {
-      await RPGService.solve(
+    const tx =  await RPGService.solve(
         rpgData.rpgAddress,
         walletService.getSigner(),
         formData.move,
         formData.salt
       );
-
+     await tx.wait()
       const lastAction = await RPGService.getRPGGameLastAction(
         walletService.getSigner(),
         rpgData.rpgAddress
@@ -74,7 +72,6 @@ export function Solve({
 
       const data = await res.json();
       if (res.ok) {
-        await refetch();
         onClose();
       } else {
         ErrorHandler.handleError(() => setIsError(true));
@@ -82,7 +79,7 @@ export function Solve({
       }
     } catch (error) {
       ErrorHandler.handleError(() => setIsError(true));
-      setErrorMessage("Something went wrong. Please try again!");
+      setErrorMessage("Transaction failed!. move and salt must match the original.");
       console.log(error);
     } finally {
       setLoading(false);

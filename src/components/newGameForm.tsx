@@ -95,7 +95,6 @@ export function PlayNewGame({
 
       const data = await res.json();
       if (res.ok) {
-        await refetch();
         onClose();
       } else {
         ErrorHandler.handleError(() => setIsError(true));

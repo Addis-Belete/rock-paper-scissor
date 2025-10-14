@@ -71,23 +71,60 @@ export default function Home() {
   };
 
   useEffect(() => {
+    if (!account) return;
+
     const eventSource = new EventSource("/api/v1/stream");
 
+    eventSource.onopen = () => {
+      console.log("Connected to SSE stream");
+    };
+
     eventSource.onmessage = (event) => {
-      const change = JSON.parse(event.data);
-      console.log("Change received:", change);
-      fetchGames();
+      try {
+        const change = JSON.parse(event.data);
+        setGames((prev) => {
+          if (change.operationType === "insert") {
+            if (
+              change.fullDocument.player2Address === account.toLowerCase() ||
+              change.fullDocument.player1Address === account.toLowerCase()
+            ) {
+              // avoid duplicates
+              const exists = prev.some(
+                (g) => g._id === change.fullDocument._id
+              );
+              if (!exists) {
+                return [...prev, change.fullDocument];
+              }
+            }
+          } else if (
+            change.operationType === "update" ||
+            change.operationType === "replace"
+          ) {
+            return prev.map((g) =>
+              g._id === change.documentKey._id
+                ? { ...g, ...change.updateDescription?.updatedFields }
+                : g
+            );
+          } else if (change.operationType === "delete") {
+            return prev.filter((g) => g._id !== change.documentKey._id);
+          }
+          return prev;
+        });
+      } catch (err) {
+        console.error("Failed to parse SSE event:", err);
+      }
     };
 
     eventSource.onerror = (err) => {
       console.error("SSE error:", err);
-      eventSource.close();
     };
 
-    return () => eventSource.close();
-  }, []);
+    return () => {
+      console.log("Closing SSE connection");
+      eventSource.close();
+    };
+  }, [account]); // ✅ only depends on account
 
- 
   useEffect(() => {
     if (!account) return;
     (async () => {
@@ -112,8 +149,12 @@ export default function Home() {
             {["active", "completed"].map((t, index) => {
               return (
                 <li key={index}>
-                  <Button variant="outline" onClick={() => setTab(t)} active={tab === t}>
-                     {t.charAt(0).toUpperCase() + t.slice(1)}
+                  <Button
+                    variant="outline"
+                    onClick={() => setTab(t)}
+                    active={tab === t}
+                  >
+                    {t.charAt(0).toUpperCase() + t.slice(1)}
                   </Button>
                 </li>
               );
@@ -155,7 +196,7 @@ export default function Home() {
                     Role
                   </th>
                   <th className="px-4 py-3 text-left font-semibold text-gray-300">
-                    Address
+                    Opponent Address
                   </th>
                   <th className="px-4 py-3 text-left font-semibold text-gray-300">
                     Staked ETH
@@ -216,7 +257,9 @@ export default function Home() {
                           {game.status?.toUpperCase()}
                         </td>
                         <td className="px-6 py-4 text-sm text-gray-100">
-                          {game.status === 'completed' ? '--' : formatRemainingTime(remaining)}
+                          {game.status === "completed"
+                            ? "--"
+                            : formatRemainingTime(remaining)}
                         </td>
                         <td className="px-6 py-4 text-sm text-gray-100">
                           {status ? (
@@ -258,7 +301,6 @@ export default function Home() {
             rpgData={modal?.game}
             show={modal.display}
             onClose={() => setModal({ display: false, game: null, type: null })}
-            refetch={fetchGames}
           />
         )}
 
@@ -268,12 +310,10 @@ export default function Home() {
             rpgData={modal?.game}
             show={modal.display}
             onClose={() => setModal({ display: false, game: null, type: null })}
-            refetch={fetchGames}
           />
         )}
         {modal?.type === "refund" && modal?.game && (
           <Refund
-            refetch={fetchGames}
             balance={balance || "0"}
             rpgData={modal?.game}
             show={modal.display}
