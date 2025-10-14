@@ -25,6 +25,7 @@ export function Header({ children }: { children: React.ReactNode }) {
       await walletService.connect();
       const balance = await walletService.getBalance(walletService.account);
       localStorage.setItem("rpgWalletConnected", "true");
+      await walletService.signMessage()
       setAccount(walletService.account || null);
       setBalance(balance);
     } catch (error) {
