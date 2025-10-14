@@ -3,6 +3,8 @@ import "./globals.css";
 import { Header } from "@/components/header";
 import { DatabaseService } from "@/lib/services/databaseService";
 
+export const dynamic = 'force-dynamic';
+
 export const metadata: Metadata = {
   title: "RPS Game",
   description: "Rock Paper Scissors Game",

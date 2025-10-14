@@ -20,7 +20,9 @@ import { Solve } from "@/components/solve";
 import { Refund } from "@/components/refund";
 import { useRouter, useSearchParams } from "next/navigation";
 
+
 export default function Home() {
+
   const router = useRouter();
   const searchParams = useSearchParams();
 
