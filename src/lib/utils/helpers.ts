@@ -1,9 +1,11 @@
 import { GameResult } from "@/types";
 
+// shorten wallet address
 export function shortenAddress(addr: string, chars = 6) {
   return `${addr.slice(0, chars)}...${addr.slice(-chars)}`;
 }
 
+// format timestamp to human readable date
 export function formatDate(timestamp: number | string) {
   const date = new Date(Number(timestamp));
   return date.toLocaleDateString("en-US", {
@@ -13,6 +15,7 @@ export function formatDate(timestamp: number | string) {
   });
 }
 
+//converts remaining time to hr:min:sec format
 export function formatRemainingTime(seconds: number): string {
   const hrs = Math.floor(seconds / 3600);
   const mins = Math.floor((seconds % 3600) / 60);
@@ -25,6 +28,7 @@ export function formatRemainingTime(seconds: number): string {
   return `${secs}s`;
 }
 
+//returns the status of the game for the given player
 export const getGameStatus = (
   account: string,
   timeRemaining: string | number,
@@ -50,6 +54,7 @@ export const getGameStatus = (
   return null;
 };
 
+// returns the status of the game. weather the player win, loss or draw
 export const getWinStatus = (
   player1Move: string,
   player2Move: string | null
@@ -62,6 +67,7 @@ export const getWinStatus = (
   return "draw";
 };
 
+// returns the game result based on the role.
 export const getPlayerGameResult = (
   role: "Player One" | "Player Two",
   result: GameResult

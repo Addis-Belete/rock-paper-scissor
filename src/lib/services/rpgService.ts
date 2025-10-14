@@ -6,6 +6,16 @@ import { parseEther, Addressable } from "ethers";
 import { config } from "@/config";
 import { Hasher__factory, Rpg__factory } from "../../../typechain";
 export class RPGService {
+
+  /**
+   * 
+   * @param signer The signer of the game
+   * @param move The move selected by the player
+   * @param salt The salt entered by the player
+   * @param stakeAmount The amount of ETH to stake to play the game
+   * @param player2Address The wallet address of opponent
+   * @returns returns the contract address of the newly created game
+   */
   static async playNewRPGGame(
     signer: Signer | undefined,
     move: string,
@@ -28,6 +38,12 @@ export class RPGService {
     return rpg.target;
   }
 
+  /**
+   * 
+   * @param signer The signer of the game
+   * @param rpgAddress The address of the game contract to get the last action from
+   * @returns retuns the timestamp at which last action takes place
+   */
   static async getRPGGameLastAction(
     signer: Signer | undefined,
     rpgAddress: string
@@ -38,6 +54,14 @@ export class RPGService {
     return lastAction.toString();
   }
 
+  /**
+   * 
+   * @param address The address of the game contract 
+   * @param move The 
+   * @param signer 
+   * @param amount 
+   * @returns 
+   */
   static async move(
     address: string,
     move: string,
