@@ -49,7 +49,6 @@ export default function DisplayGames({
       const baseUrl =
         process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000";
       const url = `${baseUrl}/api/v1/getRpgGames?address=${account}`;
-      console.log(url, "url");
       const res = await fetch(url, {
         method: "GET",
         headers: { "Content-Type": "application/json" },

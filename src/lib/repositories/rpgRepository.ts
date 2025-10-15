@@ -10,8 +10,10 @@ export class RPGRepository {
    * @return The saved game object.
    */
   static async saveNewGame(data: IRPG) {
-    const result = await RPG.insertOne(data);
-    return result.toObject();
+   return ErrorHandler.withRetry(async () => {
+      const result = await RPG.insertOne(data);
+      return result.toObject();
+    });
   }
 
   /**
@@ -40,7 +42,7 @@ export class RPGRepository {
    * @return The updated RPG game object.
    */
   static async updateRPGGame(data: IRPG) {
-    ErrorHandler.withRetry(async () => {
+   return ErrorHandler.withRetry(async () => {
       const _data = await RPG.findByIdAndUpdate(
         data._id?.toLowerCase(), // normalize id
         { $set: data }, // update data
