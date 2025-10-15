@@ -10,7 +10,7 @@ This project demonstrates:
 
 - Secure wallet connection and signature-based authentication
 
-- Encrypted player moves (commit–reveal logic using cryptography)
+- Encrypted player moves + salt (commit–reveal logic using cryptography)
 
 - On-chain game interaction using ethers.js v6 and TypeChain
 
@@ -55,6 +55,7 @@ If the Sepolia network is not already added to your wallet, the app will add and
 - If Player 2 doesn’t play within the timeout, Player 1 can refund their staked ETH.
 
 - If Player 1 doesn’t reveal after Player 2 has played, Player 2 can claim 2× the staked amount after the timeout expires.
+
 
 ## Tech Stacks
 

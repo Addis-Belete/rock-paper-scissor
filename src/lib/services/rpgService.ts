@@ -6,15 +6,15 @@ import { parseEther, Addressable } from "ethers";
 import { config } from "@/config";
 import { Hasher__factory, Rpg__factory } from "../../../typechain";
 export class RPGService {
-
   /**
-   * 
-   * @param signer The signer of the game
-   * @param move The move selected by the player
-   * @param salt The salt entered by the player
-   * @param stakeAmount The amount of ETH to stake to play the game
-   * @param player2Address The wallet address of opponent
-   * @returns returns the contract address of the newly created game
+   * @notice Deploys a new RPG game contract and commits the player's move using a hash.
+   * @dev Uses the Hasher contract to hash the move and salt, then deploys the RPG contract with the hash and opponent's address. Throws if wallet is not connected.
+   * @param signer The wallet signer used to deploy the contract.
+   * @param move The move selected by the player.
+   * @param salt The secret salt entered by the player.
+   * @param stakeAmount The amount of ETH to stake to play the game.
+   * @param player2Address The wallet address of the opponent.
+   * @return The contract address of the newly created RPG game.
    */
   static async playNewRPGGame(
     signer: Signer | undefined,
@@ -39,10 +39,11 @@ export class RPGService {
   }
 
   /**
-   * 
-   * @param signer The signer of the game
-   * @param rpgAddress The address of the game contract to get the last action from
-   * @returns retuns the timestamp at which last action takes place
+   * @notice Retrieves the timestamp of the last action taken in the RPG game contract.
+   * @dev Throws if wallet is not connected.
+   * @param signer The wallet signer used to interact with the contract.
+   * @param rpgAddress The address of the RPG game contract.
+   * @return The timestamp of the last action as a string.
    */
   static async getRPGGameLastAction(
     signer: Signer | undefined,
@@ -55,12 +56,13 @@ export class RPGService {
   }
 
   /**
-   * 
-   * @param address The address of the game contract 
-   * @param move The 
-   * @param signer 
-   * @param amount 
-   * @returns 
+   * @notice Sends the player's move to the RPG game contract.
+   * @dev Estimates gas for the play transaction and applies a buffer. Throws if wallet is not connected.
+   * @param address The address of the RPG game contract.
+   * @param move The move selected by the player (e.g., "rock", "paper", or "scissors").
+   * @param signer The wallet signer used to send the transaction.
+   * @param amount The amount of ETH to stake for the move.
+   * @return The transaction response from the contract's play function.
    */
   static async move(
     address: string,
@@ -83,6 +85,14 @@ export class RPGService {
     return await contract.play(move, overrides);
   }
 
+  /**
+   * @notice Computes the hash of the player's move and salt for commitment.
+   * @dev Uses the Hasher contract to generate a hash for the move and salt.
+   * @param move The move selected by the player.
+   * @param salt The secret salt entered by the player.
+   * @param signer The wallet signer used to interact with the Hasher contract.
+   * @return The hash string representing the committed move and salt.
+   */
   static async getHash(
     move: string,
     salt: string,
@@ -94,6 +104,15 @@ export class RPGService {
     return hash;
   }
 
+  /**
+   * @notice Reveals the player's move and salt to resolve the game outcome.
+   * @dev Estimates gas for the solve transaction and applies a buffer. Throws if wallet is not connected.
+   * @param address The address of the RPG game contract.
+   * @param signer The wallet signer used to send the transaction.
+   * @param move The move to reveal (e.g., "rock", "paper", or "scissors").
+   * @param salt The secret salt used during commitment.
+   * @return The transaction response from the contract's solve function.
+   */
   static async solve(
     address: string,
     signer: Signer | undefined,
@@ -117,6 +136,13 @@ export class RPGService {
     return await contract.solve(move, salt, overrides);
   }
 
+  /**
+   * @notice Calls the j2Timeout function to trigger a timeout for player 2 if they have not acted in time.
+   * @dev Estimates gas for the j2Timeout transaction and applies a buffer. Throws if wallet is not connected.
+   * @param address The address of the RPG game contract.
+   * @param signer The wallet signer used to send the transaction.
+   * @return The transaction response from the contract's j2Timeout function.
+   */
   static async callJ2TimeOut(address: string, signer: Signer | undefined) {
     if (!signer) throw new Error("Wallet not connected");
 
@@ -133,6 +159,13 @@ export class RPGService {
     return await contract.j2Timeout(overrides);
   }
 
+  /**
+   * @notice Calls the j1Timeout function to trigger a timeout for player 1 if they have not acted in time.
+   * @dev Estimates gas for the j1Timeout transaction and applies a buffer. Throws if wallet is not connected.
+   * @param address The address of the RPG game contract.
+   * @param signer The wallet signer used to send the transaction.
+   * @return The transaction response from the contract's j1Timeout function.
+   */
   static async callJ1TimeOut(address: string, signer: Signer | undefined) {
     if (!signer) throw new Error("Wallet not connected");
 

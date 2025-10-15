@@ -3,13 +3,10 @@ export class ErrorHandler {
     process.env.RETRY_MAX_ATTEMPTS || "3",
     10
   );
+
   private static initialDelay = parseInt(
     process.env.RETRY_INITIAL_DELAY || "1000",
     10
-  );
-  private static errorDisplayTimeout = parseInt(
-    process.env.ERROR_DISPLAY_TIMEOUT || "1000"
-  
   );
 
   /**
