@@ -22,7 +22,7 @@ export class RPGRepository {
    */
   static async getRPGGames(playerAddress: string) {
     return ErrorHandler.withRetry(async () => {
-      RPG.find({
+      return RPG.find({
         $or: [
           { player1Address: playerAddress },
           { player2Address: playerAddress },
