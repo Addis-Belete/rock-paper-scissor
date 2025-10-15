@@ -1,3 +1,4 @@
+//used to validate a form when creating a new game
 export const validateFrom = (
   formData: {
     move: string;
