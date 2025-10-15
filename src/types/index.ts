@@ -1,5 +1,5 @@
 
-export type GameResult = "win" | "loss" | "draw" | "timeout" | "refunded" | null;
+export type GameResult = "win" | "lose" | "draw" | "timeout" | "refunded" | null;
 export interface IRPG {
   _id?: string;
   rpgAddress: string;

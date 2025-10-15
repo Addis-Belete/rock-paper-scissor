@@ -56,15 +56,16 @@ export const getGameStatus = (
 
 // returns the status of the game. weather the player win, loss or draw
 export const getWinStatus = (
-  player1Move: string,
-  player2Move: string | null
+  c1: number,
+  c2: number | null
 ): Partial<GameResult> | null => {
-  if (!player2Move) return null;
-  if (Number(player1Move) > Number(player2Move)) return "win";
-
-  if (Number(player1Move) < Number(player2Move)) return "loss";
-
-  return "draw";
+  if (!c2) return null;
+  if (c1 === c2) return "draw";
+  if (c1 % 2 === c2 % 2) {
+    return c1 < c2 ? "win" : "lose";
+  } else {
+    return c1 > c2 ? "win" : "lose";
+  }
 };
 
 // returns the game result based on the role.
@@ -75,8 +76,8 @@ export const getPlayerGameResult = (
   if (role === "Player One") return result;
   switch (result) {
     case "win":
-      return "loss";
-    case "loss":
+      return "lose";
+    case "lose":
       return "win";
     case "timeout":
       return "refunded";

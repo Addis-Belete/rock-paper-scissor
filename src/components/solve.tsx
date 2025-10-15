@@ -50,7 +50,7 @@ export function Solve({
         rpgData.rpgAddress
       );
 
-      const gameResult = getWinStatus(payload.move, rpgData.player2Move);
+      const gameResult = getWinStatus(Number(payload.move), Number(rpgData.player2Move));
       const _rpgData: IRPG = {
         ...rpgData,
         progress: "solved",
