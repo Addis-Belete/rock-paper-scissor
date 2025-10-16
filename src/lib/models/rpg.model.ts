@@ -18,6 +18,6 @@ const RPGSchema = new Schema({
   encryptedData: {type: String, required: true},
   player2Move: {type: String }
 });
-RPGSchema.index({ player1Address: 1, playerAddress: 1 }); // index for faster queries by address and blockNumber
+RPGSchema.index({ player1Address: 1, playerAddress: 1 }); // index for faster queries by player 1 and player 2 address
 
 export const RPG: Model<IRPG> = models?.RPG || model("RPG", RPGSchema);
