@@ -49,7 +49,7 @@ export function Play({
         ...rpgData,
         progress: "moved",
         lastAction: lastAction.toString(),
-        player2Move: move
+        player2Move: move,
       };
 
       const res = await fetch("/api/v1/updateRpg", {
@@ -65,7 +65,8 @@ export function Play({
         setErrorMessage(data?.error);
       }
     } catch (error) {
-      console.log(error);
+      ErrorHandler.handleError(() => setIsError(true));
+      setErrorMessage("Something went wrong. Please try again!");
     } finally {
       setLoading(false);
     }

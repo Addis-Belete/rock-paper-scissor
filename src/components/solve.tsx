@@ -77,7 +77,7 @@ export function Solve({
       setErrorMessage(
         "Transaction failed!. move and salt must match the original."
       );
-      console.log(error);
+      console.error(error);
     } finally {
       setLoading(false);
     }
